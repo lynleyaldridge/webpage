@@ -1,11 +1,11 @@
 ---
-bio: My research interests include social and educational inequality, transitions from education to employment, education, cross-cultural comparative research, and mental health/ wellbeing.  
+bio: My research interests include social and educational inequality, transitions from education to employment, education, cross-cultural comparative research, migration/mobility, mental health/wellbeing, and Rstats.  
 education:
   courses:
-  - course: PhD in Sociology
+  - course: PhD Sociology and Social Policy
     institution: University of Leeds, UK
     year: 2017
-  - course: MA in Sociological Research
+  - course: MA Sociological Research
     institution: University of Essex, UK
     year: 2011
   - course: BPsych (Hons)
@@ -24,7 +24,9 @@ interests:
 - Youth transitions
 - Education
 - Cross-cultural comparative research
+- Migration/mobility
 - Mental health and well-being
+- Rstats
 organizations: #can just leave blank instead of 'set as []'
 - name: 
   url:
@@ -51,6 +53,6 @@ user_groups:
 - Principal Investigators
 ---
 
-I am a PhD qualified social scientist, with a background in psychology and sociology. I love data analysis, visualization and interpretation, and have coordinated a variety of  quantitative and qualitative research and evaluation projects to successful completion in the fields of psycho-oncology and education. I am passionate about the use of data to inform practice and advocacy. I call myself an Antipodean, as someone who has  been fortunate to enjoy many interludes of working, studying and living abroad, who identifies as equal parts Kiwi (New Zealander) and Aussie (Australian). 
+I am a PhD qualified social scientist, with a background in psychology and sociology. I love data analysis, visualization and interpretation, and have rich experience collecting, managing, analysing and reporting on both quantitative and qualitative data across a diverse range of research and evaluation projects (primarily in the fields of psycho-oncology and education). I am passionate about the use of data to inform policy and practice. I call myself an Antipodean, identifying as equal parts Kiwi (New Zealander) and Aussie (Australian). 
 
 {{< icon name="download" pack="fas" >}} Download my {{< staticref "media/resume.pdf" "newtab" >}}resumé{{< /staticref >}}.

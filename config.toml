@@ -15,7 +15,7 @@ baseurl = "/"
 
 # Enter a copyright notice to display in the site footer.
 # To display a copyright symbol, type `&copy;`. For current year, type `{year}`.
-copyright = "&copy; {year} Lynley Aldridge - Made with GitHub, the R blogdown package, and the Academic theme for Hugo"
+copyright = "&copy; {year} Lynley Aldridge - Made with [GitHub](https://github.com/lynleyaldridge/webpage), the [blogdown package](https://github.com/rstudio/blogdown) and the [Academic theme](https://themes.gohugo.io/academic/) for [Hugo](https://gohugo.io/)"
 
 ############################
 ## Advanced options below ##
@@ -43,6 +43,8 @@ ignoreFiles = ["\\.ipynb$", ".ipynb_checkpoints$", "\\.Rmd$", "\\.Rmarkdown$", "
   tags = "/tag/:slug/"
   categories = "/category/:slug/"
   publication_types = "/publication-type/:slug/"
+  post = "/:year/:month/:day/:slug"
+
 
 [outputs]
   home = [ "HTML", "RSS", "JSON", "WebAppManifest" ]
