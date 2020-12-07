@@ -1,7 +1,7 @@
 ---
 title: Why start a blog?
 author: Lynley Aldridge
-date: '2020-12-05'
+date: '2020-12-07'
 slug: why-start-a-blog
 categories: []
 tags: 
@@ -10,7 +10,7 @@ tags:
 subtitle: ''
 summary: ''
 authors: []
-lastmod: '2020-12-05T15:52:18+11:00'
+lastmod: '2020-12-07T15:52:18+11:00'
 featured: no
 image:
   caption: ''
@@ -25,9 +25,19 @@ I’m a social scientist with a keen interest in data analysis and visualization
 
 Hotel quarantine in Sydney earlier this year gave me a chance to work through the introductory [RStudio primers](https://rstudio.cloud/learn/primers) and the wonderful [RYouWithMe](https://rladiessydney.org/courses/ryouwithme/) course created by [R-Ladies Sydney](https://rladiessydney.org/), and I’ve been developing my skills ever since.  
 
+![quarantine](/img/quarantine.png)
+
 I’m loving the learning I’m doing, and the resources that are available in the [R Ladies](https://twitter.com/hashtag/RLadies) and [rstats](https://twitter.com/hashtag/rstats) communities, and this has pushed me into giving blogging a go as part of my learning process. 
 
-So, why start this blog?  
+So, why start this blog? Here are five reasons I've taken the plunge:
+
+1. To develop an online portfolio
+2. To practice (and improve) my teaching
+3. To improve the quality of my work
+4. To make life easier for 'future Lynley'
+5. To cultivate (and maintain) a growth mindset
+
+You can read more about each of these reasons below.
 
 **1.	To develop an online portfolio**
 
