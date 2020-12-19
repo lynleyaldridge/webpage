@@ -10,7 +10,7 @@ tags:
 subtitle: ''
 summary: ''
 authors: []
-lastmod: '2020-12-07T15:52:18+11:00'
+lastmod: '2020-12-19T15:52:18+11:00'
 featured: no
 image:
   caption: ''
@@ -62,7 +62,7 @@ On a related note, I think that blogging will help me improve the quality of my 
 
 **4. To make life easier for 'future Lynley'**
 
-{{<tweet 928447584712253440 >}} 
+{{<tweet 1339325684020248578 >}} 
 
 Jen Richmond has a series on [her blog](http://jenrichmond.rbind.io/post/) which she has titled IDHTG (I Don't Have to Google), and has talked about being committed to blogging instructions to herself for anything she's found herself googling at least three times. I think this is a fantastic idea. I've already tried reinventing the wheel with supposedly 'simple' tasks each time I've tried to update R, deal with projects hosted on Dropbox, or create initial summaries of variables in my dataset before conducting more detailed analyses. I can see myself creating and drawing on a lot of short blogposts on these and similar themes in my future.
 
