@@ -25,12 +25,12 @@ In this post I talk through, step-by-step, the process I used to create this web
 
 Here are some of the resources I found most useful:
 
-* Alison Hill's [Up and Running with Blogdown](https://alison.rbind.io/post/2017-06-12-up-and-running-with-blogdown/). As tweeted below, Alison has recently written an updated post to reflect changes to blogdown and the Hugo Academic theme - now ["Wowchemy"](https://wowchemy.com/)):
+* Alison Hill's [Up and running with blogdown](https://alison.rbind.io/post/2017-06-12-up-and-running-with-blogdown/). As tweeted below, Alison has recently written an updated post to reflect changes to blogdown and the Hugo Academic theme - now ["Wowchemy"](https://wowchemy.com/)):
 
 {{<tweet 1344727166228058114 >}} 
 
 * The slides from [Summer of blogdown](https://summer-of-blogdown.netlify.app/), and 
-[Up and Running with blogdown: A workshop for the Portland R User Group](https://alison.rbind.io/slides/blogdown-workshop-slides.html), also by Alison Hill. 
+[Up and running with blogdown: A workshop for the Portland R User Group](https://alison.rbind.io/slides/blogdown-workshop-slides.html), also by Alison Hill. 
 * The reference guide [blogdown: Creating Websites with R Markdown](https://bookdown.org/yihui/blogdown/) by Yihui Xie, Amber Thomas and Alison Presmanes Hill (note that this is currently being updated due to changes to blogdown and Hugo)
 * Annie Lyu's [Fun blogdown in R to design a personal website](https://annielyu.com/slides/isugg/blogdown_aa#6)
 * Martin Frigaard's [How to build a website with blogdown in R](https://www.storybench.org/how-to-build-a-website-with-blogdown-in-r/)
@@ -135,11 +135,21 @@ I want to add a footnote after this sentence.[^1]
 
 [^1]: This text will become the first footnote.
 
+### File paths for data
+
+https://blogdown-demo.rbind.io/2018/02/27/r-file-paths/
+
+### Favicons
+
+https://www.kiroule.com/article/add-favicon-to-hugo-based-website/
+https://favicon.io/favicon-generator/
+
+
 ## Step 9: Settling in for the long haul - additional configuration changes
 
 # Glossary
 
-  [GitHub](https://guides.github.com/activities/hello-world/#what): "GitHub is a code hosting platform for version control and collaboration. It lets you and others work together on projects from anywhere."
+  [GitHub](https://guides.github.com/activities/hello-world/#what): "GitHub is a code hosting platform for version control and collaboration. It lets you and others work together on projects from anywhere." From the point of view of a total novice, understanding GitHub better has been the most valuable learning outcome I gained from this whole process. Understanding that I can peek 'under the hood' of any website or other documentations that's hosted on GitHub to look at the code that's used to create it has revolutionsied my learning process.  Wondering how someone managed to create spoiler tags in a blog post, or create that great tidy Tuesday visualization?  Simply open the document containing their code, copy, and adapt for your own purposes (with appropriate acknowledgements).   
 
   GitHub Pages: 
 

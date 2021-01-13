@@ -1,15 +1,14 @@
 ---
-title: "Experimenting with SQL in RMarkdown: RSQLite and SELECT queries"
+title: "Experimenting with SQL in RMarkdown: SELECT, UPDATE and JOIN queries using RSQLite"
 author: Lynley Aldridge
-date: '2021-01-10'
+date: '2021-01-13'
 slug: experimenting-with-sql
-draft: TRUE
 categories: []
 tags: []
 subtitle: ''
 summary: ''
 authors: []
-lastmod: '2021-01-10T17:20:19+11:00'
+lastmod: '2021-01-13T17:20:19+11:00'
 featured: no
 image:
   caption: ''
@@ -18,11 +17,11 @@ image:
 projects: []
 ---
 
-In this post I talk through, step-by-step, a process I've been using to document the SQL learning I've been doing using R Markdown. I draw on a tutorial by Andrew Couch to create a database I can manipulate using RSQLite, using the Tidy Tuesday dataset featuring Taylor Swift and Beyoncé album data.  I then run some example SQL queries using this data.
+In this post I talk through, step-by-step, a process I've been using to document the SQL learning I've been doing using R Markdown. I draw on a tutorial by Andrew Couch to create a database I can manipulate using RSQLite, using a Tidy Tuesday dataset featuring Taylor Swift and Beyoncé album data.  I then run some example SQL queries using this data.
 
 # Introduction
 
-I've been wanting to document some SQL learning I've been doing lately, and at first I wasn't sure where to start. Then I found a you tube tutorial from Andrew Couch that talks through how to connect to a database using R Studio, and query this database using SQL (from within an R Markdown document). In this tutorial I load csv data into a simple sql database, to document my SQL learning journey.
+I've been wanting to document some SQL learning I've been doing lately, and was grateful to find a you tube tutorial from Andrew Couch. Here he talks through how to connect to a database using R Studio and query this database using SQL (from within an R Markdown document). In this tutorial I load csv data into a simple sql database and run some queries, to document my SQL learning journey.
 
 {{< youtube zAgTlZUugUE >}}
 
@@ -68,9 +67,7 @@ copy_to(con, sales)
 copy_to(con, charts)
 ```
 
-# SQL queries in R Markdown
-
-# Working with the sales data
+# SQL queries in R Markdown (an introduction using sales data)
 
 ## SELECT query to retrieve all records 
 
@@ -189,7 +186,7 @@ As shown above, this table contains sales data across multiple countries for alb
 
 ## UPDATE query using SUBSTR to fix release dates
 
-We can see from the above that the release dates for Beyoncé's *Dangerously in Love* and *B'Day* have both been extracted with superfluous details following the date.  The following UPDATE query changes the released date to only a specified  substring (all text preceding a space preceding an opening bracket) WHERE strings contained this character combination.  This took close inspection of the data and a process of trial and error to figure out, drawing on stack overflow contributions by [scaisEdge](https://stackoverflow.com/questions/40708459/update-column-to-remove-everything-before-and-including-a-space-in-sqlite) and [CodeBird](https://stackoverflow.com/questions/22558411/how-to-remove-everything-after-certain-character-in-sql). 
+We can see from the above that the release dates for Beyoncé's *Dangerously in Love* and *B'Day* have both been extracted with superfluous details following the date.  The following UPDATE query changes the released date to only a specified substring (all text preceding a space preceding an opening bracket) WHERE strings contained this character combination.  This took close inspection of the data and a process of trial and error to figure out, drawing on stack overflow contributions by [scaisEdge](https://stackoverflow.com/questions/40708459/update-column-to-remove-everything-before-and-including-a-space-in-sqlite) and [CodeBird](https://stackoverflow.com/questions/22558411/how-to-remove-everything-after-certain-character-in-sql). 
 
 
 ```r
@@ -225,9 +222,9 @@ WHERE title LIKE "%Day" OR TITLE = "Dangerously in Love"
 ## 6 Beyoncé               B'Day      UK   700000 September 1, 2006
 ```
 
-Now that we have formatted these dates consistently, can we now extract the last four characters of each string to report and sort on albums by year released?
+Now that we have formatted these dates consistently, let's try to extract the last four characters of each string to create a `year_released` column. 
 
-The `SUBSTR` function selects only the last four characters of the `released` character field, allowing for extraction and sorting of data by album release year.
+The query below uses the `SUBSTR` function to select only the last four characters of the `released` character field, that will allow us to sort data by artist and year of album release as follows.
 
 
 ```r
@@ -275,6 +272,7 @@ WHERE country = 'World';
 ```
 ## [1] 5
 ```
+
 The `WHERE country = 'World'` filter in the above is not strictly necessary, but it does mean we get output confirming the number of records that have been modified.
 
 We can use the following query to check worldwide sales data is now being reported consistently:
@@ -335,8 +333,6 @@ ORDER BY artist DESC, year_released ASC
 ## 14      Beyoncé             Lemonade          2016     4
 ```
 
-Can you add totals rows here?
-
 ## SELECT and GROUP_CONCAT to summarise available data
 
 Our first glimpse of the sales data showed that this dataset contained data for Worldwide sales as well as for a varying number of individual countries. In the following query, I used `GROUP_CONCAT` to show the countries I had sales data for, alongside a count of these countries, for each album. 
@@ -369,13 +365,13 @@ ORDER BY artist DESC, year_released ASC
 ## 14             Lemonade          2016          WW,US,UK,FR             4
 ```
 
-This confirms that for almost all albums in our dataset, we have US, UK and worldwide sales data. This will allow us to calculate and summarize US sales as a percentage of worldwide sales for each album (and to double check summary tables generated against available data).  
+This confirms that for almost all albums in our dataset, we have US, UK and worldwide sales data. 
 
-# Working with the charts data
+# Working with the charts data and using JOIN to merge tables 
 
 ## SELECT query using WHERE ... IN to filter records  
 
-Now, let's view data available from the charts table. This table lists artist, title, chart, and (peak) chart_position for each album, across a number of charts. Based on a review of sales data above, I'm going to extract only results for the US and UK to join to the data in the sales table.  
+Now, let's view data available from the charts table as a precursor to merging this data with the sales data. This table lists artist, title, chart, and (peak) chart_position for each album, across a number of charts. Based on the review of sales data above, I'm going to extract only results for the US and UK to join to the data in the sales table.  
 
 
 ```r
@@ -517,7 +513,9 @@ ORDER BY charts.artist DESC, year_released ASC
 
 # Next steps
 
-There are a lot of things I'd like to explore further in my SQL learning journey. How would I use the data in the sales table to calculate the percentage of worldwide sales represented by UK and US sales respectively, for each album?  Can I pivot this data easily, to create a column for US chart position/sales and a column for UK chart position/sales? How do I export this data in a way that makes it easy to generate nice tables and graphs in R Markdown?  But let these be questions for a future post.
+There are a lot of things I'd like to explore further in my SQL learning journey. How would I use the data in the sales table to calculate the percentage of worldwide sales represented by UK and US sales respectively, for each album?  Can I pivot this data easily, to create a table with a column for US chart position/sales and a column for UK chart position/sales? How do I export this data in a way that makes it easy to generate nice tables and graphs in R Markdown?  
+
+Let these, however, be questions for a future post.
 
 # Finally, remember to disconnect
 
@@ -528,19 +526,18 @@ At the end of this process, best practice is always to disconnect from the datab
 dbDisconnect(con)
 ```
 
-
 # References and additional resources:
 
+Here are some references I drew on when preparing this tutorial, and pointers to useful resources for future experimentation with SQL.
+
 https://db.rstudio.com/getting-started/
+https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbGetQuery
+https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbExecute
 
 https://sciencificity-blog.netlify.app/posts/2020-12-31-using-tidyverse-with-dbs-partiii/
-
 https://www.r-bloggers.com/2012/11/r-and-sqlite-part-1/
 
 https://rpubs.com/JaneDoe/698719
-
-https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbGetQuery
-https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbExecute
 
 https://programminghistorian.org/en/lessons/getting-started-with-mysql-using-r
 
