@@ -55,6 +55,6 @@ user_groups:
 
 I am a PhD qualified social scientist, with a background in psychology and sociology. I love data analysis, visualization and interpretation, and have rich experience collecting, managing, analysing and reporting on both quantitative and qualitative data across a diverse range of research and evaluation projects (primarily in the fields of psycho-oncology and education). I am passionate about the use of data to inform policy and practice. I call myself an Antipodean, identifying as equal parts Kiwi (New Zealander) and Aussie (Australian). 
 
-I'm currently searching for a Research and/or Evaluation job (primarily focusing on the education and mental health/well-being sectors). I'm open to working remotely, or positions across Australia.  
+I'm currently searching for a Data Analyst, Research and/or Evaluation job (primarily focusing on the education and mental health/well-being sectors). I'm open to working remotely, or positions across Australia.  
 
 {{< icon name="download" pack="fas" >}} Download my {{< staticref "media/resume.pdf" "newtab" >}}resumé{{< /staticref >}}.

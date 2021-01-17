@@ -4,11 +4,17 @@ author: Lynley Aldridge
 date: '2021-01-13'
 slug: experimenting-with-sql
 categories: []
-tags: []
+tags: 
+- Rstats
+- Tutorial
+- SQL
 subtitle: ''
+output:
+  blogdown::html_page:
+    toc: true
 summary: ''
 authors: []
-lastmod: '2021-01-13T17:20:19+11:00'
+lastmod: '2021-01-17T21:05:19+11:00'
 featured: no
 image:
   caption: ''
@@ -21,7 +27,7 @@ In this post I talk through, step-by-step, a process I've been using to document
 
 # Introduction
 
-I've been wanting to document some SQL learning I've been doing lately, and was grateful to find a you tube tutorial from Andrew Couch. Here he talks through how to connect to a database using R Studio and query this database using SQL (from within an R Markdown document). In this tutorial I load csv data into a simple sql database and run some queries, to document my SQL learning journey.
+I've been wanting to document some SQL learning I've been doing lately, and was grateful to find a you tube tutorial from Andrew Couch. Here he talks through how to connect to a database using R Studio and query this database using SQL (from within an R Markdown document). In this tutorial I follow his process to add csv data into a simple SQL database and run some queries, to document my own SQL learning journey.
 
 {{< youtube zAgTlZUugUE >}}
 
@@ -29,7 +35,7 @@ I've been wanting to document some SQL learning I've been doing lately, and was 
 
 ## Load packages
 
-Let's start by loading packages. First, install any packages not previously used by typing the following command directly into the console (to install odbc, for example): `install.packages("odbc")`. 
+Let's start by loading packages. First, install any packages not previously used by typing the following command directly into the console (to install odbc, for example): `install.packages("odbc")`
 
 Then run the following.
 
@@ -280,25 +286,25 @@ We can use the following query to check worldwide sales data is now being report
 
 ```r
 dbGetQuery(con, '
-SELECT artist, title, country, sales, released
+SELECT artist, title, country, sales, SUBSTR(released, -4) as year_released
 FROM sales
 WHERE country = "World" or country = "WW"
                           ')
 ```
 
 ```
-##          artist                title country    sales          released
-## 1  Taylor Swift             Fearless      WW 12000000 November 11, 2008
-## 2  Taylor Swift            Speak Now      WW  5000000  October 25, 2010
-## 3  Taylor Swift                  Red      WW  6000000  October 22, 2012
-## 4  Taylor Swift                 1989      WW 10100000  October 27, 2014
-## 5  Taylor Swift           Reputation      WW  4500000 November 10, 2017
-## 6  Taylor Swift                Lover      WW  3200000   August 23, 2019
-## 7       Beyoncé  Dangerously in Love      WW 11000000     June 23, 2003
-## 8       Beyoncé                B'Day      WW  8000000 September 1, 2006
-## 9       Beyoncé I Am... Sasha Fierce      WW  8000000 November 14, 2008
-## 10      Beyoncé              Beyoncé      WW  5000000 December 13, 2013
-## 11      Beyoncé             Lemonade      WW  2500000    April 23, 2016
+##          artist                title country    sales year_released
+## 1  Taylor Swift             Fearless      WW 12000000          2008
+## 2  Taylor Swift            Speak Now      WW  5000000          2010
+## 3  Taylor Swift                  Red      WW  6000000          2012
+## 4  Taylor Swift                 1989      WW 10100000          2014
+## 5  Taylor Swift           Reputation      WW  4500000          2017
+## 6  Taylor Swift                Lover      WW  3200000          2019
+## 7       Beyoncé  Dangerously in Love      WW 11000000          2003
+## 8       Beyoncé                B'Day      WW  8000000          2006
+## 9       Beyoncé I Am... Sasha Fierce      WW  8000000          2008
+## 10      Beyoncé              Beyoncé      WW  5000000          2013
+## 11      Beyoncé             Lemonade      WW  2500000          2016
 ```
 
 ## SELECT DISTINCT and GROUP By query to identify unique values present
@@ -335,7 +341,7 @@ ORDER BY artist DESC, year_released ASC
 
 ## SELECT and GROUP_CONCAT to summarise available data
 
-Our first glimpse of the sales data showed that this dataset contained data for Worldwide sales as well as for a varying number of individual countries. In the following query, I used `GROUP_CONCAT` to show the countries I had sales data for, alongside a count of these countries, for each album. 
+Our first glimpse of the sales data showed that this dataset contained data for worldwide sales as well as for a varying number of individual countries. In the following query, I used `GROUP_CONCAT` to show the countries I had sales data for, alongside a count of these countries, for each album. 
 
 
 ```r
@@ -371,7 +377,7 @@ This confirms that for almost all albums in our dataset, we have US, UK and worl
 
 ## SELECT query using WHERE ... IN to filter records  
 
-Now, let's view data available from the charts table as a precursor to merging this data with the sales data. This table lists artist, title, chart, and (peak) chart_position for each album, across a number of charts. Based on the review of sales data above, I'm going to extract only results for the US and UK to join to the data in the sales table.  
+Now, let's view data available from the charts table as a precursor to merging this data with the sales data. This table lists artist, title, chart, and peak chart position for each album, across a number of charts. Based on the review of sales data above, I'm going to extract only results for the US and UK to join to the data in the sales table.  
 
 
 ```r
@@ -464,52 +470,52 @@ WHERE INSTR(released, ' (')>0;
 
 Now let's try a simple left join to combine sales and chart position data for each album. This gives all rows in the sales table, and matching rows in the charts table.
 
-Note that an inner join would give us 25 rows of data. We would lose the UK row for Taylor Swift's self-titled album released in 2006, and the US and UK rows for Folklore, due to lack of rows with matching country codes in the sales table for these records.  
-
 
 ```r
 dbGetQuery(con, '
-SELECT charts.artist, charts.title, SUBSTR(charts.released, -4) as year_released, charts.chart, charts.chart_position, sales.sales  
+SELECT charts.artist, charts.title, SUBSTR(charts.released, -4) as released, charts.chart, charts.chart_position as position, sales.sales  
 FROM charts
 LEFT JOIN sales
 ON charts.chart = sales.country and
 charts.title = sales.title
 WHERE charts.chart IN ("US", "UK")
-ORDER BY charts.artist DESC, year_released ASC
+ORDER BY charts.artist DESC, released ASC
                           ')
 ```
 
 ```
-##          artist                title year_released chart chart_position   sales
-## 1  Taylor Swift         Taylor Swift          2006    US              5 5720000
-## 2  Taylor Swift         Taylor Swift          2006    UK             81      NA
-## 3  Taylor Swift             Fearless          2008    US              1 7180000
-## 4  Taylor Swift             Fearless          2008    UK              5  609000
-## 5  Taylor Swift            Speak Now          2010    US              1 4694000
-## 6  Taylor Swift            Speak Now          2010    UK              6  169281
-## 7  Taylor Swift                  Red          2012    US              1 4465000
-## 8  Taylor Swift                  Red          2012    UK              1  693000
-## 9  Taylor Swift                 1989          2014    US              1 6215000
-## 10 Taylor Swift                 1989          2014    UK              1 1250000
-## 11 Taylor Swift           Reputation          2017    US              1 2300000
-## 12 Taylor Swift           Reputation          2017    UK              1  378000
-## 13 Taylor Swift                Lover          2019    US              1 1085000
-## 14 Taylor Swift                Lover          2019    UK              1  221654
-## 15 Taylor Swift             Folklore          2020    US              1      NA
-## 16 Taylor Swift             Folklore          2020    UK              1      NA
-## 17      Beyoncé  Dangerously in Love          2003    US              1 5100000
-## 18      Beyoncé  Dangerously in Love          2003    UK              1 1260000
-## 19      Beyoncé                B'Day          2006    US              1 3610000
-## 20      Beyoncé                B'Day          2006    UK              3  700000
-## 21      Beyoncé I Am... Sasha Fierce          2008    US              1 3380000
-## 22      Beyoncé I Am... Sasha Fierce          2008    UK              2 1740000
-## 23      Beyoncé                    4          2011    US              1 1500000
-## 24      Beyoncé                    4          2011    UK              1  791000
-## 25      Beyoncé              Beyoncé          2013    US              1 2512000
-## 26      Beyoncé              Beyoncé          2013    UK              2  418000
-## 27      Beyoncé             Lemonade          2016    US              1 1554000
-## 28      Beyoncé             Lemonade          2016    UK              1  328000
+##          artist                title released chart position   sales
+## 1  Taylor Swift         Taylor Swift     2006    US        5 5720000
+## 2  Taylor Swift         Taylor Swift     2006    UK       81      NA
+## 3  Taylor Swift             Fearless     2008    US        1 7180000
+## 4  Taylor Swift             Fearless     2008    UK        5  609000
+## 5  Taylor Swift            Speak Now     2010    US        1 4694000
+## 6  Taylor Swift            Speak Now     2010    UK        6  169281
+## 7  Taylor Swift                  Red     2012    US        1 4465000
+## 8  Taylor Swift                  Red     2012    UK        1  693000
+## 9  Taylor Swift                 1989     2014    US        1 6215000
+## 10 Taylor Swift                 1989     2014    UK        1 1250000
+## 11 Taylor Swift           Reputation     2017    US        1 2300000
+## 12 Taylor Swift           Reputation     2017    UK        1  378000
+## 13 Taylor Swift                Lover     2019    US        1 1085000
+## 14 Taylor Swift                Lover     2019    UK        1  221654
+## 15 Taylor Swift             Folklore     2020    US        1      NA
+## 16 Taylor Swift             Folklore     2020    UK        1      NA
+## 17      Beyoncé  Dangerously in Love     2003    US        1 5100000
+## 18      Beyoncé  Dangerously in Love     2003    UK        1 1260000
+## 19      Beyoncé                B'Day     2006    US        1 3610000
+## 20      Beyoncé                B'Day     2006    UK        3  700000
+## 21      Beyoncé I Am... Sasha Fierce     2008    US        1 3380000
+## 22      Beyoncé I Am... Sasha Fierce     2008    UK        2 1740000
+## 23      Beyoncé                    4     2011    US        1 1500000
+## 24      Beyoncé                    4     2011    UK        1  791000
+## 25      Beyoncé              Beyoncé     2013    US        1 2512000
+## 26      Beyoncé              Beyoncé     2013    UK        2  418000
+## 27      Beyoncé             Lemonade     2016    US        1 1554000
+## 28      Beyoncé             Lemonade     2016    UK        1  328000
 ```
+
+Note that an inner join would give us 25 rows of data. We would lose the UK row for Taylor Swift's self-titled album released in 2006, and the US and UK rows for Folklore, due to lack of rows with matching country codes in the sales table for these records.  
 
 # Next steps
 
@@ -526,23 +532,26 @@ At the end of this process, best practice is always to disconnect from the datab
 dbDisconnect(con)
 ```
 
-# References and additional resources:
+# References and additional resources
 
 Here are some references I drew on when preparing this tutorial, and pointers to useful resources for future experimentation with SQL.
 
-https://db.rstudio.com/getting-started/
-https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbGetQuery
-https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbExecute
+* Tips on [Getting Started](https://db.rstudio.com/getting-started/) with databases using R (from RStudio) 
 
-https://sciencificity-blog.netlify.app/posts/2020-12-31-using-tidyverse-with-dbs-partiii/
-https://www.r-bloggers.com/2012/11/r-and-sqlite-part-1/
+* DBI package documentation for [dbGetQuery](https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbGetQuery) and [dbExecute](https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbExecute) 
 
-https://rpubs.com/JaneDoe/698719
+* [Using the tidyverse with Databases](https://sciencificity-blog.netlify.app/posts/2020-12-12-using-the-tidyverse-with-databases/), a three-part series (from Vebash Naidoo's blog Sciencificity) using Alison Hill's [The Great British Bake Off dataset](https://github.com/apreshill/bakeoff) and dplyr's [starwars dataset](https://dplyr.tidyverse.org/reference/starwars.html)
 
-https://programminghistorian.org/en/lessons/getting-started-with-mysql-using-r
+* [Generating SQL with {dbplyr} and sqlfluff](https://emilyriederer.netlify.app/post/sql-generation/) from Emily Riederer - an example using the [palmer penguins dataset](https://allisonhorst.github.io/palmerpenguins/reference/penguins.html) by Allison Horst, Alison Hill and Kristen Gorman
 
-https://jagg19.github.io/2019/05/mysql-r/
+* [R and SQLite](https://www.r-bloggers.com/2012/11/r-and-sqlite-part-1/) from Sandy Muspratt - an example using relational educational data and tables for students, classes, and schools
 
-https://irene.rbind.io/post/using-sql-in-rstudio/
+* [Introduction to MySQL with R](https://programminghistorian.org/en/lessons/getting-started-with-mysql-using-r) from Jeff Blackadar - an example using MySQL and historical data from newspaper articles
 
-https://tbradley1013.github.io/2017/08/26/sql-management-in-r/
+* [Using MySQL with R](https://jagg19.github.io/2019/05/mysql-r/) from Jagger Villalobos - an example using MySQL and a large Chicago Parking Ticket dataset 
+
+* [Using SQL in RStudio](https://irene.rbind.io/post/using-sql-in-rstudio/) from Irene Steves - a discussion of the Rubymine IDE and working with SQL in RStudio, 
+
+* [Creating, Writing, Querying, and Modifying SQL Database from R using odbc, dbplyr, and DBI](https://tbradley1013.github.io/2017/08/26/sql-management-in-r/) from Tyler Bradley
+
+

@@ -4,11 +4,17 @@ author: Lynley Aldridge
 date: '2021-01-13'
 slug: experimenting-with-sql
 categories: []
-tags: []
+tags: 
+- Rstats
+- Tutorial
+- SQL
 subtitle: ''
+output:
+  blogdown::html_page:
+    toc: true
 summary: ''
 authors: []
-lastmod: '2021-01-13T17:20:19+11:00'
+lastmod: '2021-01-17T21:05:19+11:00'
 featured: no
 image:
   caption: ''
@@ -21,7 +27,7 @@ In this post I talk through, step-by-step, a process I've been using to document
 
 # Introduction
 
-I've been wanting to document some SQL learning I've been doing lately, and was grateful to find a you tube tutorial from Andrew Couch. Here he talks through how to connect to a database using R Studio and query this database using SQL (from within an R Markdown document). In this tutorial I follow his process to add csv data into a simple sql database and run some queries, to document my own SQL learning journey.
+I've been wanting to document some SQL learning I've been doing lately, and was grateful to find a you tube tutorial from Andrew Couch. Here he talks through how to connect to a database using R Studio and query this database using SQL (from within an R Markdown document). In this tutorial I follow his process to add csv data into a simple SQL database and run some queries, to document my own SQL learning journey.
 
 {{< youtube zAgTlZUugUE >}}
 
@@ -136,7 +142,7 @@ We can use the following query to check worldwide sales data is now being report
 
 ```{r}
 dbGetQuery(con, '
-SELECT artist, title, country, sales, released
+SELECT artist, title, country, sales, SUBSTR(released, -4) as year_released
 FROM sales
 WHERE country = "World" or country = "WW"
                           ')
@@ -157,7 +163,7 @@ ORDER BY artist DESC, year_released ASC
 
 ## SELECT and GROUP_CONCAT to summarise available data
 
-Our first glimpse of the sales data showed that this dataset contained data for Worldwide sales as well as for a varying number of individual countries. In the following query, I used `GROUP_CONCAT` to show the countries I had sales data for, alongside a count of these countries, for each album. 
+Our first glimpse of the sales data showed that this dataset contained data for worldwide sales as well as for a varying number of individual countries. In the following query, I used `GROUP_CONCAT` to show the countries I had sales data for, alongside a count of these countries, for each album. 
 
 ```{r}
 dbGetQuery(con, '
@@ -174,7 +180,7 @@ This confirms that for almost all albums in our dataset, we have US, UK and worl
 
 ## SELECT query using WHERE ... IN to filter records  
 
-Now, let's view data available from the charts table as a precursor to merging this data with the sales data. This table lists artist, title, chart, and (peak) chart_position for each album, across a number of charts. Based on the review of sales data above, I'm going to extract only results for the US and UK to join to the data in the sales table.  
+Now, let's view data available from the charts table as a precursor to merging this data with the sales data. This table lists artist, title, chart, and peak chart position for each album, across a number of charts. Based on the review of sales data above, I'm going to extract only results for the US and UK to join to the data in the sales table.  
 
 ```{r}
 dbGetQuery(con, '
@@ -200,19 +206,19 @@ WHERE INSTR(released, ' (')>0;
 
 Now let's try a simple left join to combine sales and chart position data for each album. This gives all rows in the sales table, and matching rows in the charts table.
 
-Note that an inner join would give us 25 rows of data. We would lose the UK row for Taylor Swift's self-titled album released in 2006, and the US and UK rows for Folklore, due to lack of rows with matching country codes in the sales table for these records.  
-
 ```{r}
 dbGetQuery(con, '
-SELECT charts.artist, charts.title, SUBSTR(charts.released, -4) as year_released, charts.chart, charts.chart_position, sales.sales  
+SELECT charts.artist, charts.title, SUBSTR(charts.released, -4) as released, charts.chart, charts.chart_position as position, sales.sales  
 FROM charts
 LEFT JOIN sales
 ON charts.chart = sales.country and
 charts.title = sales.title
 WHERE charts.chart IN ("US", "UK")
-ORDER BY charts.artist DESC, year_released ASC
+ORDER BY charts.artist DESC, released ASC
                           ')
 ```
+
+Note that an inner join would give us 25 rows of data. We would lose the UK row for Taylor Swift's self-titled album released in 2006, and the US and UK rows for Folklore, due to lack of rows with matching country codes in the sales table for these records.  
 
 # Next steps
 
@@ -228,23 +234,26 @@ At the end of this process, best practice is always to disconnect from the datab
 dbDisconnect(con)
 ```
 
-# References and additional resources:
+# References and additional resources
 
 Here are some references I drew on when preparing this tutorial, and pointers to useful resources for future experimentation with SQL.
 
-https://db.rstudio.com/getting-started/
-https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbGetQuery
-https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbExecute
+* Tips on [Getting Started](https://db.rstudio.com/getting-started/) with databases using R (from RStudio) 
 
-https://sciencificity-blog.netlify.app/posts/2020-12-31-using-tidyverse-with-dbs-partiii/
-https://www.r-bloggers.com/2012/11/r-and-sqlite-part-1/
+* DBI package documentation for [dbGetQuery](https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbGetQuery) and [dbExecute](https://www.rdocumentation.org/packages/DBI/versions/0.5-1/topics/dbExecute) 
 
-https://rpubs.com/JaneDoe/698719
+* [Using the tidyverse with Databases](https://sciencificity-blog.netlify.app/posts/2020-12-12-using-the-tidyverse-with-databases/), a three-part series (from Vebash Naidoo's blog Sciencificity) using Alison Hill's [The Great British Bake Off dataset](https://github.com/apreshill/bakeoff) and dplyr's [starwars dataset](https://dplyr.tidyverse.org/reference/starwars.html)
 
-https://programminghistorian.org/en/lessons/getting-started-with-mysql-using-r
+* [Generating SQL with {dbplyr} and sqlfluff](https://emilyriederer.netlify.app/post/sql-generation/) from Emily Riederer - an example using the [palmer penguins dataset](https://allisonhorst.github.io/palmerpenguins/reference/penguins.html) by Allison Horst, Alison Hill and Kristen Gorman
 
-https://jagg19.github.io/2019/05/mysql-r/
+* [R and SQLite](https://www.r-bloggers.com/2012/11/r-and-sqlite-part-1/) from Sandy Muspratt - an example using relational educational data and tables for students, classes, and schools
 
-https://irene.rbind.io/post/using-sql-in-rstudio/
+* [Introduction to MySQL with R](https://programminghistorian.org/en/lessons/getting-started-with-mysql-using-r) from Jeff Blackadar - an example using MySQL and historical data from newspaper articles
 
-https://tbradley1013.github.io/2017/08/26/sql-management-in-r/
+* [Using MySQL with R](https://jagg19.github.io/2019/05/mysql-r/) from Jagger Villalobos - an example using MySQL and a large Chicago Parking Ticket dataset 
+
+* [Using SQL in RStudio](https://irene.rbind.io/post/using-sql-in-rstudio/) from Irene Steves - a discussion of the Rubymine IDE and working with SQL in RStudio, 
+
+* [Creating, Writing, Querying, and Modifying SQL Database from R using odbc, dbplyr, and DBI](https://tbradley1013.github.io/2017/08/26/sql-management-in-r/) from Tyler Bradley
+
+
