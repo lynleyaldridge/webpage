@@ -17,7 +17,8 @@
   name = "Publications"
   url = "#publications"
   weight = 40
-  
+
+# not on home page, one level down   
 [[main]]
   name = "Resources"
   url = "/Resources"

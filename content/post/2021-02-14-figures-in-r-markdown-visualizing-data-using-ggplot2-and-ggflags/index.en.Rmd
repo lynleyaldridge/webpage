@@ -1,0 +1,301 @@
+---
+title: 'Figures in R Markdown: Visualizing Data using ggplot2 and Ggflags'
+author: Lynley Aldridge
+date: '2021-02-14'
+slug: figures-in-r-markdown-visualizing-data-using-ggplot2-and-ggflags
+categories: []
+draft: TRUE
+tags:
+  - Rstats
+  - Tutorial
+  - Visualization
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2021-01-26T19:07:59+11:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+In this post I explore ways of using ggplot2 and ggflags to plot album sales and chart data from the Taylor Swift and Beyoncé Tidy Tuesday dataset, formatted via SQL [in a previous post](/2021/01/13/experimenting-with-sql/) and its followup.
+
+## Graphing sales data using ggplot2
+
+Here's how we can plot worldwide sales data from this dataframe by descending order of sales in a column graph, colouring columns by artist.
+
+```{r wwsales}
+
+df %>%
+  mutate(title = fct_reorder(title, WW_sales)) %>%
+  drop_na() %>%
+  ggplot(aes(WW_sales, title, fill = artist)) +
+  geom_col() +
+  scale_x_continuous() +
+  labs(x = "Sales (Worldwide) in dollars", y = "Album") +
+  theme_minimal()
+```
+
+However, the capabilities of ggplot2 are best demonstrated when the sales data are presented in long format, as in the original table.  First, let's update this table to  make the reporting of 'WW' or 'Worldwide' sales data consistent, and to use country codes equivalent to those used in the `ggflags` package.
+
+This suggestion for multiple replace statements in a single statement from [Turophile](https://stackoverflow.com/questions/28493238/how-to-replace-multiple-words-in-sqlite-database-using-update-query) on stackoverflow.
+
+```{r message = FALSE}
+dbExecute(con, "
+UPDATE sales
+SET country = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(country, 'World', 'WW'), 'AUS', 'AU'), 'JPN', 'JP'), 'UK', 'GB'), 'CAN', 'CA'), 'FRA', 'FR');
+                          ")
+```
+
+Next, let's export this sales dataframe.
+
+```{sql, connection = con, output.var = "sales_long_df"}
+
+SELECT * FROM sales 
+```
+
+## Examples for using flags with ggplot2
+
+https://github.com/rensa/ggflags
+
+## Plotting sales data for a single album by country ... 
+
+Here's a simple graph showing sales data by country for Taylor Swift's 2019 album, *Lover*.
+
+```{r flags-one-album}
+
+# chart with flags
+
+options(scipen=10000)
+
+sales_long_df$country <- factor(sales_long_df$country,
+          levels = unique(sales_long_df$country[order(sales_long_df$sales)]))
+
+sales_long_df %>%
+  filter((title %in% c("Lover") & country != "WW")) %>%
+  mutate(code = tolower(country)) %>% 
+  ggplot(aes(sales, country)) +
+  geom_col() +
+  geom_flag(x = -10, aes(country = code), size = 10) +
+  labs(y = "Country", y = "Sales") +
+  # geom_text(aes(label=round(Proportion, digits = 0)), hjust = 1.6, color="white", size=3.5) +
+  theme_minimal()
+
+# filter(title %in% c("Lover") & country != "WW") %>%
+
+#   
+
+```
+
+## Plotting sales data for two albums - stacked bar chart that needs to be shown side by side instead ... 
+
+Can we do this for more than one album?  A work in progress ...
+
+```{r flags-two-albums}
+
+# chart with flags
+
+options(scipen=10000)
+
+sales_long_df$country <- factor(sales_long_df$country,
+          levels = unique(sales_long_df$country[order(sales_long_df$sales)]))
+
+sales_long_df %>%
+  filter((title %in% c("Lover", "Fearless") & country != "WW")) %>%
+  mutate(code = tolower(country)) %>% 
+  ggplot(aes(x = title, y = sales, fill = country)) +
+  geom_col() +
+  coord_flip() +
+  geom_flag(x = -10, aes(country = code), size = 10) +
+  labs(x = "Album", y = "Sales") +
+  # geom_text(aes(label=round(Proportion, digits = 0)), hjust = 1.6, color="white", size=3.5) +
+  theme_minimal()
+
+# filter(title %in% c("Lover") & country != "WW") %>%
+
+#   
+
+```
+
+## Plotting sales data for all albums using facet wrap but no flags
+
+I can't get the flags to work, but can I summarise for all albums, with facet_wrap, using stacked bar charts? I can, but I think it's more meaningful just to use US and GB.
+
+```{r all-albums}
+
+# chart without flags
+
+options(scipen=10000)
+
+sales_long_df %>%
+  filter(country %in% c("US", "GB") & title != "Taylor Swift") %>%
+  mutate(artist = as.factor(artist),
+         title = reorder_within(title, sales, artist)) %>%
+  mutate(millions = sales/1000000) %>%
+  ggplot(aes(x = title, y = millions, fill = country)) +
+  geom_col() +
+  coord_flip() +
+  scale_x_reordered() +
+  facet_wrap(~artist, scales = "free_y") +
+  labs(x = "Album", y = "Sales in millions") +
+  # geom_text(aes(label=round(Proportion, digits = 0)), hjust = 1.6, color="white", size=3.5) +
+  theme_minimal()
+
+# filter(title %in% c("Lover") & country != "WW") %>%
+
+#   
+
+```
+
+
+## Plotting sales data for multiple albums ... 
+
+Can we work with Julia Silge's example on babynames?
+
+```{r flags-all-albums}
+
+# chart with flags
+
+options(scipen=10000)
+
+sales_long_df %>%
+  filter(country != "WW") %>%
+  mutate(millions = sales/1000000) %>%
+  mutate(code = tolower(country)) %>% 
+  ggplot(aes(millions, country)) +
+  geom_col() +
+  geom_flag(x = -10, aes(country = code), size = 2) +
+  facet_wrap(artist ~title, scales = "free_y") +
+  labs(y = "", x = "Sales in millions")
+
+
+```
+
+
+https://www.r-bloggers.com/2019/03/all-around-the-world-maps-and-flags-in-r/
+
+https://medium.com/idinsight-blog/how-to-make-bar-graphs-using-ggplot2-in-r-9812905df5d2
+
+https://rforpoliticalscience.com/2020/12/21/scrape-nato-military-data-from-wikipedia-with-the-rvest-package-in-r/
+
+https://rforpoliticalscience.com/2020/06/03/add-correlates-of-war-codes-in-r-with-countrycode-package/
+
+https://rforpoliticalscience.com/2020/12/22/add-flags-to-graphs-with-ggimage-package-in-r/
+
+https://rforpoliticalscience.com/2021/01/13/add-circular-flags-to-maps-and-graphs-with-ggflag-package-in-r/
+
+Amazing animation using flags:
+https://github.com/thomasp85/gganimate/issues/317
+
+
+```{r compare-sales, eval = FALSE}
+
+# we need to facet or otherwise separate by artist ... what is happening with sort order?  add percent sales ... 
+
+# note that this chunk is okay now, duplicate label was the problem
+
+# ggflag masks ggimage if using ggimage, maybe this was the problem ... 
+
+# add a variable that converts country name to ISO code
+# sales_long_df$iso2 <- countrycode(sales_long_df$country, "country.name", "iso2c")
+
+
+# chart without flags; need to work on sort order
+
+# this works in R Studio but does not knit
+
+# sales_long_df %>%
+#  filter(country %in% c("WW", "US", "GB")) %>%
+#  mutate(title = fct_reorder(title, sales)) %>%
+#  ggplot(aes(sales, title, fill = country)) +
+#  facet_grid(rows = vars(artist), scales = "free_y", space = "free_y") +
+#  geom_col(position = position_dodge2(preserve = "single")) +
+#  labs(y = "Album", fill = "Sales") +
+  # geom_text(aes(label=round(Proportion, digits = 0)), hjust = 1.6, color="white", size=3.5) +
+#  theme_minimal()
+
+```
+
+## Comparative sales data - US and UK (missing UK flags)
+
+The following graph shows sales data for the US and UK, but only assigns flags to US rows.
+
+```{r flags}
+
+# chart with flags
+
+sales_long_df %>%
+  filter(country %in% c("US", "GB")) %>%
+  mutate(code = tolower(country)) %>% 
+  ggplot(aes(title, sales, fill = country)) +
+  geom_col(stat = identity, position = position_dodge2()) +
+  coord_flip() +
+  geom_flag(x = -5, aes(country = code), size = 4) +
+  labs(y = "Album", fill = "Sales") +
+  # geom_text(aes(label=round(Proportion, digits = 0)), hjust = 1.6, color="white", size=3.5) +
+  theme_minimal()
+
+```
+
+
+
+## Other
+
+
+```{r}
+sales_long_df %>%
+  filter(country %in% c("US", "GB")) %>%
+  mutate(code = tolower(country)) %>% 
+  ggplot(aes(sales, title, fill = country)) +
+  geom_col(position = position_dodge2(preserve = "single")) +
+  scale_x_continuous() +
+  labs(x = "Sales in dollars", y = "Album") +
+  theme_minimal()
+```
+
+
+
+```{r percent, eval = FALSE}
+
+df %>%
+  filter(artist == "Taylor Swift") %>%
+  drop_na() %>%
+  ggplot(aes(title, percent, group = 1)) +
+  geom_line() +
+  theme_minimal()
+```
+
+
+```{r Beypercent, eval = FALSE}
+
+# doesn't work for some reason
+
+df %>%
+  filter(artist == "Beyonce") %>%
+  drop_na() %>%
+  ggplot(aes(title, percent, group = 1)) +
+  geom_line() +
+  theme_minimal()
+```
+
+For the purposes of graphing this data, maybe original sales table is preferable. Let's extract everything from the sales table as a dataframe:
+
+```{sql, connection = con, output.var = "df"}
+
+SELECT * FROM sales 
+```
+
+## Graphing sales data using ggplot2
+
+```{r graph}
+
+df %>%
+  filter(country %in% c("US", "World", "Worldwide")) %>%
+  mutate(title = fct_reorder(title, sales)) %>%
+  ggplot(aes(sales, title, fill = artist)) +
+  geom_col() +
+  scale_x_continuous()
+```

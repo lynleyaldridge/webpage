@@ -8,6 +8,7 @@ tags:
 - Rstats
 - Tutorial
 - SQL
+- TidyTuesday
 subtitle: ''
 output:
   blogdown::html_page:

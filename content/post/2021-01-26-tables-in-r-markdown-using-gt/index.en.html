@@ -1,0 +1,1279 @@
+---
+title: "Tables in R Markdown: Summarizing data using gt"
+author: Lynley Aldridge
+date: '2021-01-26'
+slug: tables-in-r-markdown-using-gt
+categories: []
+tags:
+  - Tutorial
+  - Rstats
+draft: TRUE
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2021-01-26T19:04:10+11:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+<link href="/rmarkdown-libs/anchor-sections/anchor-sections.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/anchor-sections/anchor-sections.js"></script>
+
+
+<div id="setup" class="section level2">
+<h2>Setup</h2>
+<p>As in the previous post, load packages, read in data, and clean and extract data using the following syntax:</p>
+<pre class="r"><code>#load packages
+library(tidyverse)
+library(odbc)
+library(DBI)
+library(RSQLite)
+# library(arsenal) # for summary tables
+library(gt) # for summary tables
+library(tidytext) # for reorder_within
+
+library(ggflags) 
+
+#to install ggflags, I needed to install devtools then type into console: devtools::install_github(&#39;rensa/ggflags&#39;); this uses circular flags but renders an error if country code not a match (e.g., for worldwide row)
+
+#library(countrycode)
+#library(ggimage)
+
+#currently not loading ggimage as it may clash with flags
+
+# library(reactable) # not available for this version of R
+
+
+#load data
+sales &lt;- readr::read_csv(&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/sales.csv&#39;)
+charts &lt;- readr::read_csv(&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/charts.csv&#39;)
+
+#create connection to database and copy data into database
+con &lt;- dbConnect(RSQLite::SQLite(), &quot;:memory:&quot;)
+copy_to(con, sales)
+copy_to(con, charts)
+
+#clean release dates as per previous post
+dbExecute(con, &quot;
+UPDATE charts
+SET released = TRIM(SUBSTR(released, 1, INSTR(released, &#39; (&#39;)))
+WHERE INSTR(released, &#39; (&#39;)&gt;0; 
+                          &quot;)</code></pre>
+<pre><code>## [1] 20</code></pre>
+<pre class="sql"><code>
+SELECT charts.artist, charts.title, SUBSTR(charts.released, -4) AS released, 
+  US_charts.chart_position AS US_position,
+  UK_charts.chart_position AS UK_position,
+  round(US_sales.sales/1000000, 1) AS US_sales, 
+  round(UK_sales.sales/1000000, 1) AS UK_sales, 
+  round(WW_sales.sales/1000000, 1) AS WW_sales, 
+  round((WW_sales.sales - US_sales.sales - UK_sales.sales)/1000000, 1) AS other_sales,
+  round(US_sales.sales/WW_sales.sales*100, 1) AS US_percent,
+  round(UK_sales.sales/WW_sales.sales*100, 1) AS UK_percent,
+  round((WW_sales.sales - US_sales.sales - UK_sales.sales)/WW_sales.sales*100, 1) AS other_percent
+FROM charts
+LEFT JOIN (SELECT artist, title, chart_position FROM charts WHERE chart = &quot;US&quot;) AS US_charts
+ON charts.title = US_charts.title
+LEFT JOIN (SELECT artist, title, chart_position FROM charts WHERE chart = &quot;UK&quot;) AS UK_charts
+ON charts.title = UK_charts.title
+LEFT JOIN sales
+ON charts.chart = sales.country and charts.title = sales.title
+LEFT JOIN (SELECT artist, title, sales FROM sales WHERE country = &quot;US&quot;) AS US_sales
+  ON sales.title = US_sales.title
+LEFT JOIN (SELECT artist, title, sales FROM sales WHERE country = &quot;UK&quot;) AS UK_sales
+  ON sales.title = UK_sales.title
+LEFT JOIN (SELECT artist, title, sales FROM sales WHERE country = &quot;WW&quot; OR country = &quot;World&quot;) AS WW_sales
+  ON sales.title = WW_sales.title
+GROUP BY charts.artist, charts.title
+ORDER BY charts.artist DESC, released ASC;</code></pre>
+</div>
+<div id="formatting-tables-nicely-in-r-markdown" class="section level2">
+<h2>Formatting tables nicely in R Markdown</h2>
+<p>How would we go about making a nice table for R Markdown reports. Lots of packages to try, arsenal, flextable, gt …</p>
+<p>Reviews and demonstrations of multiple packages available for producing tables in R can be found at:</p>
+<ul>
+<li><p>David Keyes’ summary of <a href="https://rfortherestofus.com/2019/11/how-to-make-beautiful-tables-in-r/">How to make beautiful tables in R</a> offers short reviews and demonstrations of gt, kable and kableExtra, formattable, DT, reactable, flextable, huxtable, rhandsontable, and pixiedust</p></li>
+<li><p>Pascal Schmidt’s <a href="https://thatdatatho.com/2018/08/20/easily-create-descriptive-summary-statistic-tables-r-studio/">How to easily create descriptive summary statistics tables in R studio - By group</a> reviews and demonstrates packages that are particularly useful for summary statistics tables that compare groups, including two of my favorites so far for this purpose, arsenal and tableone</p></li>
+</ul>
+<p>and ways to create highly customized and attractive summary tables include:</p>
+<p>GT documentation:
+<a href="https://blog.rstudio.com/2020/04/08/great-looking-tables-gt-0-2/" class="uri">https://blog.rstudio.com/2020/04/08/great-looking-tables-gt-0-2/</a></p>
+<p>add percent_US bars for sales (look at rule 10 in Thomas Mock blog?</p>
+<p><a href="https://themockup.blog/posts/2020-09-04-10-table-rules-in-r/" class="uri">https://themockup.blog/posts/2020-09-04-10-table-rules-in-r/</a></p>
+<p><a href="https://themockup.blog/posts/2020-10-31-embedding-custom-features-in-gt-tables/" class="uri">https://themockup.blog/posts/2020-10-31-embedding-custom-features-in-gt-tables/</a></p>
+<p>Okay, if you want to analyse sales by album, here’s some industry-speak:</p>
+<p><a href="https://chartmasters.org/2020/10/taylor-swift-albums-and-songs-sales/" class="uri">https://chartmasters.org/2020/10/taylor-swift-albums-and-songs-sales/</a></p>
+<p>Obviously global sales totals for later albums will be less?</p>
+<p>Over 70% of sales from US - abroad improved with success of 1989</p>
+<p>Reputation came out after streaming was inevitable and naturally sold less but high by today’s standards …</p>
+<pre class="r"><code>df %&gt;%
+  
+    filter(artist == &quot;Taylor Swift&quot;) %&gt;%
+    
+    mutate( 
+    # combine values from two columns into a single column
+    title_artist = paste0(&quot;&lt;span style=&#39;color:#344072&#39;&gt;**&quot;, 
+                title, &quot;**&lt;/span&gt;&quot;, &quot;&lt;br&gt;&lt;span     style=&#39;color:#8086A0&#39;&gt;&quot;, artist, &quot;&lt;/span&gt;&quot;), 
+ 
+    # add a column containing urls to album art
+    img = paste0(&quot;https://raw.githubusercontent.com/gkaramanis/tidytuesday/master/2020-week40/img/&quot;, 
+                title, &quot;.jpg&quot;)) %&gt;%
+
+    # arrange by release date
+    arrange(released) %&gt;% 
+    
+    select(img, title_artist, released, US_position, UK_position, WW_sales, US_sales,
+           US_percent) %&gt;%
+  
+  # create a table using gt
+  gt() %&gt;%
+  
+    # set column labels 
+    cols_label(
+      img = &quot;&quot;,
+      title_artist = html(&quot;&lt;div style=&#39;text-align:left;
+                          &#39;&gt;Album&lt;br&gt;&lt;span style=&#39;color:#8086A0&#39;&gt;Artist&lt;/span&gt;&lt;/div&gt;&quot;),
+      released = &quot;Released&quot;,
+      US_position = &quot;US&quot;,
+      UK_position = &quot;UK&quot;,
+      US_sales = &quot;US&quot;,
+      # UK_sales = &quot;UK&quot;,
+      WW_sales = &quot;World&quot;,
+      # other_sales = &quot;Other&quot;,
+      US_percent = &quot;US&quot;) %&gt;%
+      # UK_percent = &quot;UK&quot;,
+      # other_percent = &quot;Other&quot;) %&gt;%
+  
+    # transform text in img column to display and appropriately size images
+    text_transform(
+      locations = cells_body(vars(img)),
+      fn = function(x){
+      web_image(url = x, height = 80)
+      }
+    ) %&gt;%
+  
+    # size columns
+    cols_width(
+    vars(title_artist) ~ px(150),
+    vars(released) ~ px(80),
+    vars(US_position) ~ px(35),
+    vars(UK_position) ~ px(35),
+    vars(WW_sales) ~ px(50),
+    vars(US_sales) ~ px(50),
+    vars(US_percent) ~ px(50)
+    ) %&gt;%
+  
+    # transform NA values in all columns to &quot;-&quot;
+    text_transform(
+      locations = cells_body(columns = gt::everything()),
+      fn = function(x) {
+      str_replace(x, &quot;NA&quot;, &quot;–&quot;)
+      }
+    ) %&gt;%
+  
+    # format title_artist column as markdown text
+    fmt_markdown(columns = c(&quot;title_artist&quot;)) %&gt;%
+
+    # align cells containing numeric values right
+    cols_align(align = &quot;right&quot;, columns = c(&quot;US_position&quot;, &quot;UK_position&quot;, &quot;WW_sales&quot;,
+                                            &quot;US_sales&quot;, &quot;US_percent&quot;)) %&gt;%
+  
+    # create headings spanning multiple columns
+    tab_spanner(label = &quot;Chart position&quot;, columns = vars(US_position, UK_position)) %&gt;%
+    tab_spanner(label = &quot;Sales (millions)&quot;, columns = vars(WW_sales, US_sales)) %&gt;%
+    tab_spanner(label = &quot;Sales (percent)&quot;, columns = vars(US_percent)) %&gt;%
+  
+    # create title for table
+    tab_header(
+      title = md(&quot;Lover was Taylor Swift&#39;s album with the broadest global appeal, while Speak Now sold primarily to US audiences&quot;)) %&gt;%
+  
+    # create source note for table
+    tab_source_note(&quot;Source: Billboard, Table: Modified from Georgios Karamanis&quot;) %&gt;%
+  
+    # change column labels to uppercase
+    tab_options(
+      column_labels.text_transform = &quot;uppercase&quot;,
+      table.font.color = &quot;#344072&quot;
+    )</code></pre>
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#rjotnlxmek .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #344072;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#rjotnlxmek .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#rjotnlxmek .gt_title {
+  color: #344072;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#rjotnlxmek .gt_subtitle {
+  color: #344072;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 4px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#rjotnlxmek .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#rjotnlxmek .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#rjotnlxmek .gt_col_heading {
+  color: #344072;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: uppercase;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#rjotnlxmek .gt_column_spanner_outer {
+  color: #344072;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: uppercase;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#rjotnlxmek .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#rjotnlxmek .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#rjotnlxmek .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#rjotnlxmek .gt_group_heading {
+  padding: 8px;
+  color: #344072;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#rjotnlxmek .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #344072;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#rjotnlxmek .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#rjotnlxmek .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#rjotnlxmek .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#rjotnlxmek .gt_stub {
+  color: #344072;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#rjotnlxmek .gt_summary_row {
+  color: #344072;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#rjotnlxmek .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#rjotnlxmek .gt_grand_summary_row {
+  color: #344072;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#rjotnlxmek .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#rjotnlxmek .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#rjotnlxmek .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#rjotnlxmek .gt_footnotes {
+  color: #344072;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#rjotnlxmek .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#rjotnlxmek .gt_sourcenotes {
+  color: #344072;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#rjotnlxmek .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#rjotnlxmek .gt_left {
+  text-align: left;
+}
+
+#rjotnlxmek .gt_center {
+  text-align: center;
+}
+
+#rjotnlxmek .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#rjotnlxmek .gt_font_normal {
+  font-weight: normal;
+}
+
+#rjotnlxmek .gt_font_bold {
+  font-weight: bold;
+}
+
+#rjotnlxmek .gt_font_italic {
+  font-style: italic;
+}
+
+#rjotnlxmek .gt_super {
+  font-size: 65%;
+}
+
+#rjotnlxmek .gt_footnote_marks {
+  font-style: italic;
+  font-size: 65%;
+}
+</style>
+<div id="rjotnlxmek" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table" style="table-layout: fixed;">
+  <colgroup>
+    <col/>
+    <col style="width:150px;"/>
+    <col style="width:80px;"/>
+    <col style="width:35px;"/>
+    <col style="width:35px;"/>
+    <col style="width:50px;"/>
+    <col style="width:50px;"/>
+    <col style="width:50px;"/>
+  </colgroup>
+  <thead class="gt_header">
+    <tr>
+      <th colspan="8" class="gt_heading gt_title gt_font_normal" style>Lover was Taylor Swift's album with the broadest global appeal, while Speak Now sold primarily to US audiences</th>
+    </tr>
+    <tr>
+      <th colspan="8" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style></th>
+    </tr>
+  </thead>
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1"></th>
+      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1"><div style='text-align:left;
+                          '>Album<br><span style='color:#8086A0'>Artist</span></div></th>
+      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1">Released</th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="2">
+        <span class="gt_column_spanner">Chart position</span>
+      </th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="2">
+        <span class="gt_column_spanner">Sales (millions)</span>
+      </th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="1">
+        <span class="gt_column_spanner">Sales (percent)</span>
+      </th>
+    </tr>
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">US</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">UK</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">World</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">US</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">US</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr>
+      <td class="gt_row gt_left"><img src="https://raw.githubusercontent.com/gkaramanis/tidytuesday/master/2020-week40/img/Taylor Swift.jpg" style="height:80px;"></td>
+      <td class="gt_row gt_left"><div class='gt_from_md'><p><span style='color:#344072'><strong>Taylor Swift</strong></span><br><span     style='color:#8086A0'>Taylor Swift</span></p>
+</div></td>
+      <td class="gt_row gt_left">2006</td>
+      <td class="gt_row gt_right">5</td>
+      <td class="gt_row gt_right">81</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">5.7</td>
+      <td class="gt_row gt_right">–</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><img src="https://raw.githubusercontent.com/gkaramanis/tidytuesday/master/2020-week40/img/Fearless.jpg" style="height:80px;"></td>
+      <td class="gt_row gt_left"><div class='gt_from_md'><p><span style='color:#344072'><strong>Fearless</strong></span><br><span     style='color:#8086A0'>Taylor Swift</span></p>
+</div></td>
+      <td class="gt_row gt_left">2008</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">5</td>
+      <td class="gt_row gt_right">12.0</td>
+      <td class="gt_row gt_right">7.2</td>
+      <td class="gt_row gt_right">59.8</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><img src="https://raw.githubusercontent.com/gkaramanis/tidytuesday/master/2020-week40/img/Speak Now.jpg" style="height:80px;"></td>
+      <td class="gt_row gt_left"><div class='gt_from_md'><p><span style='color:#344072'><strong>Speak Now</strong></span><br><span     style='color:#8086A0'>Taylor Swift</span></p>
+</div></td>
+      <td class="gt_row gt_left">2010</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">6</td>
+      <td class="gt_row gt_right">5.0</td>
+      <td class="gt_row gt_right">4.7</td>
+      <td class="gt_row gt_right">93.9</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><img src="https://raw.githubusercontent.com/gkaramanis/tidytuesday/master/2020-week40/img/Red.jpg" style="height:80px;"></td>
+      <td class="gt_row gt_left"><div class='gt_from_md'><p><span style='color:#344072'><strong>Red</strong></span><br><span     style='color:#8086A0'>Taylor Swift</span></p>
+</div></td>
+      <td class="gt_row gt_left">2012</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">6.0</td>
+      <td class="gt_row gt_right">4.5</td>
+      <td class="gt_row gt_right">74.4</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><img src="https://raw.githubusercontent.com/gkaramanis/tidytuesday/master/2020-week40/img/1989.jpg" style="height:80px;"></td>
+      <td class="gt_row gt_left"><div class='gt_from_md'><p><span style='color:#344072'><strong>1989</strong></span><br><span     style='color:#8086A0'>Taylor Swift</span></p>
+</div></td>
+      <td class="gt_row gt_left">2014</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">10.1</td>
+      <td class="gt_row gt_right">6.2</td>
+      <td class="gt_row gt_right">61.5</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><img src="https://raw.githubusercontent.com/gkaramanis/tidytuesday/master/2020-week40/img/Reputation.jpg" style="height:80px;"></td>
+      <td class="gt_row gt_left"><div class='gt_from_md'><p><span style='color:#344072'><strong>Reputation</strong></span><br><span     style='color:#8086A0'>Taylor Swift</span></p>
+</div></td>
+      <td class="gt_row gt_left">2017</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">4.5</td>
+      <td class="gt_row gt_right">2.3</td>
+      <td class="gt_row gt_right">51.1</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><img src="https://raw.githubusercontent.com/gkaramanis/tidytuesday/master/2020-week40/img/Lover.jpg" style="height:80px;"></td>
+      <td class="gt_row gt_left"><div class='gt_from_md'><p><span style='color:#344072'><strong>Lover</strong></span><br><span     style='color:#8086A0'>Taylor Swift</span></p>
+</div></td>
+      <td class="gt_row gt_left">2019</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">3.2</td>
+      <td class="gt_row gt_right">1.1</td>
+      <td class="gt_row gt_right">33.9</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><img src="https://raw.githubusercontent.com/gkaramanis/tidytuesday/master/2020-week40/img/Folklore.jpg" style="height:80px;"></td>
+      <td class="gt_row gt_left"><div class='gt_from_md'><p><span style='color:#344072'><strong>Folklore</strong></span><br><span     style='color:#8086A0'>Taylor Swift</span></p>
+</div></td>
+      <td class="gt_row gt_left">2020</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+    </tr>
+  </tbody>
+  <tfoot class="gt_sourcenotes">
+    <tr>
+      <td class="gt_sourcenote" colspan="8">Source: Billboard, Table: Modified from Georgios Karamanis</td>
+    </tr>
+  </tfoot>
+  
+</table></div>
+</div>
+<div id="a-simpler-table-example" class="section level1">
+<h1>A simpler table example</h1>
+<p>Add average rows for each artist,</p>
+<pre class="r"><code>df %&gt;%
+  
+  # create a table using gt, grouping by artist and using title_artist for column names
+  gt(rowname_col = &quot;title&quot;, groupname_col = &quot;artist&quot;) %&gt;%
+  
+    # set column labels 
+    cols_label(
+      US_position = &quot;US&quot;,
+      UK_position = &quot;UK&quot;,
+      US_sales = &quot;US&quot;,
+      # UK_sales = &quot;UK&quot;,
+      WW_sales = &quot;Worldwide&quot;,
+      # other_sales = &quot;Other&quot;,
+      US_percent = &quot;US&quot;) %&gt;%
+      # UK_percent = &quot;UK&quot;,
+      # other_percent = &quot;Other&quot;) %&gt;%
+  
+   # transform NA values in all columns to &quot;-&quot;
+    text_transform(
+      locations = cells_body(columns = gt::everything()),
+      fn = function(x) {
+      str_replace(x, &quot;NA&quot;, &quot;–&quot;)
+      }
+    ) %&gt;%
+  
+    # create headings spanning multiple columns
+    tab_spanner(label = &quot;Chart position&quot;, columns = vars(US_position, UK_position)) %&gt;%
+    tab_spanner(label = &quot;Sales (millions)&quot;, columns = vars(WW_sales, US_sales)) %&gt;%
+    tab_spanner(label = &quot;Sales (percent)&quot;, columns = vars(US_percent)) %&gt;%
+  
+    # create title for table
+    tab_header(
+      title = md(&quot;Taylor Swift and Beyoncé&quot;))</code></pre>
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#ekvxoaeznz .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#ekvxoaeznz .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ekvxoaeznz .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#ekvxoaeznz .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 4px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#ekvxoaeznz .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ekvxoaeznz .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ekvxoaeznz .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#ekvxoaeznz .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#ekvxoaeznz .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#ekvxoaeznz .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#ekvxoaeznz .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#ekvxoaeznz .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#ekvxoaeznz .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#ekvxoaeznz .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#ekvxoaeznz .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#ekvxoaeznz .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#ekvxoaeznz .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#ekvxoaeznz .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ekvxoaeznz .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#ekvxoaeznz .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ekvxoaeznz .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#ekvxoaeznz .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#ekvxoaeznz .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ekvxoaeznz .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ekvxoaeznz .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#ekvxoaeznz .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ekvxoaeznz .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#ekvxoaeznz .gt_left {
+  text-align: left;
+}
+
+#ekvxoaeznz .gt_center {
+  text-align: center;
+}
+
+#ekvxoaeznz .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#ekvxoaeznz .gt_font_normal {
+  font-weight: normal;
+}
+
+#ekvxoaeznz .gt_font_bold {
+  font-weight: bold;
+}
+
+#ekvxoaeznz .gt_font_italic {
+  font-style: italic;
+}
+
+#ekvxoaeznz .gt_super {
+  font-size: 65%;
+}
+
+#ekvxoaeznz .gt_footnote_marks {
+  font-style: italic;
+  font-size: 65%;
+}
+</style>
+<div id="ekvxoaeznz" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+  <thead class="gt_header">
+    <tr>
+      <th colspan="11" class="gt_heading gt_title gt_font_normal" style>Taylor Swift and Beyoncé</th>
+    </tr>
+    <tr>
+      <th colspan="11" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style></th>
+    </tr>
+  </thead>
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1"></th>
+      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1">released</th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="2">
+        <span class="gt_column_spanner">Chart position</span>
+      </th>
+      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1">UK_sales</th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="2">
+        <span class="gt_column_spanner">Sales (millions)</span>
+      </th>
+      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1">other_sales</th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="1">
+        <span class="gt_column_spanner">Sales (percent)</span>
+      </th>
+      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1">UK_percent</th>
+      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1">other_percent</th>
+    </tr>
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">US</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">UK</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">Worldwide</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">US</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">US</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr class="gt_group_heading_row">
+      <td colspan="11" class="gt_group_heading">Taylor Swift</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Taylor Swift</td>
+      <td class="gt_row gt_left">2006</td>
+      <td class="gt_row gt_left">5</td>
+      <td class="gt_row gt_left">81</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">5.7</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Fearless</td>
+      <td class="gt_row gt_left">2008</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">5</td>
+      <td class="gt_row gt_right">0.6</td>
+      <td class="gt_row gt_right">12.0</td>
+      <td class="gt_row gt_right">7.2</td>
+      <td class="gt_row gt_right">4.2</td>
+      <td class="gt_row gt_right">59.8</td>
+      <td class="gt_row gt_right">5.1</td>
+      <td class="gt_row gt_right">35.1</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Speak Now</td>
+      <td class="gt_row gt_left">2010</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">6</td>
+      <td class="gt_row gt_right">0.2</td>
+      <td class="gt_row gt_right">5.0</td>
+      <td class="gt_row gt_right">4.7</td>
+      <td class="gt_row gt_right">0.1</td>
+      <td class="gt_row gt_right">93.9</td>
+      <td class="gt_row gt_right">3.4</td>
+      <td class="gt_row gt_right">2.7</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Red</td>
+      <td class="gt_row gt_left">2012</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_right">0.7</td>
+      <td class="gt_row gt_right">6.0</td>
+      <td class="gt_row gt_right">4.5</td>
+      <td class="gt_row gt_right">0.8</td>
+      <td class="gt_row gt_right">74.4</td>
+      <td class="gt_row gt_right">11.6</td>
+      <td class="gt_row gt_right">14.0</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">1989</td>
+      <td class="gt_row gt_left">2014</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_right">1.3</td>
+      <td class="gt_row gt_right">10.1</td>
+      <td class="gt_row gt_right">6.2</td>
+      <td class="gt_row gt_right">2.6</td>
+      <td class="gt_row gt_right">61.5</td>
+      <td class="gt_row gt_right">12.4</td>
+      <td class="gt_row gt_right">26.1</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Reputation</td>
+      <td class="gt_row gt_left">2017</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_right">0.4</td>
+      <td class="gt_row gt_right">4.5</td>
+      <td class="gt_row gt_right">2.3</td>
+      <td class="gt_row gt_right">1.8</td>
+      <td class="gt_row gt_right">51.1</td>
+      <td class="gt_row gt_right">8.4</td>
+      <td class="gt_row gt_right">40.5</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Lover</td>
+      <td class="gt_row gt_left">2019</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_right">0.2</td>
+      <td class="gt_row gt_right">3.2</td>
+      <td class="gt_row gt_right">1.1</td>
+      <td class="gt_row gt_right">1.9</td>
+      <td class="gt_row gt_right">33.9</td>
+      <td class="gt_row gt_right">6.9</td>
+      <td class="gt_row gt_right">59.2</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Folklore</td>
+      <td class="gt_row gt_left">2020</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+    </tr>
+    <tr class="gt_group_heading_row">
+      <td colspan="11" class="gt_group_heading">Beyoncé</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Dangerously in Love</td>
+      <td class="gt_row gt_left">2003</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_right">1.3</td>
+      <td class="gt_row gt_right">11.0</td>
+      <td class="gt_row gt_right">5.1</td>
+      <td class="gt_row gt_right">4.6</td>
+      <td class="gt_row gt_right">46.4</td>
+      <td class="gt_row gt_right">11.5</td>
+      <td class="gt_row gt_right">42.2</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">B'Day</td>
+      <td class="gt_row gt_left">2006</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">3</td>
+      <td class="gt_row gt_right">0.7</td>
+      <td class="gt_row gt_right">8.0</td>
+      <td class="gt_row gt_right">3.6</td>
+      <td class="gt_row gt_right">3.7</td>
+      <td class="gt_row gt_right">45.1</td>
+      <td class="gt_row gt_right">8.8</td>
+      <td class="gt_row gt_right">46.1</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">I Am... Sasha Fierce</td>
+      <td class="gt_row gt_left">2008</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">2</td>
+      <td class="gt_row gt_right">1.7</td>
+      <td class="gt_row gt_right">8.0</td>
+      <td class="gt_row gt_right">3.4</td>
+      <td class="gt_row gt_right">2.9</td>
+      <td class="gt_row gt_right">42.3</td>
+      <td class="gt_row gt_right">21.8</td>
+      <td class="gt_row gt_right">36.0</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">4</td>
+      <td class="gt_row gt_left">2011</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_right">0.8</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">1.5</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+      <td class="gt_row gt_right">–</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Beyoncé</td>
+      <td class="gt_row gt_left">2013</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">2</td>
+      <td class="gt_row gt_right">0.4</td>
+      <td class="gt_row gt_right">5.0</td>
+      <td class="gt_row gt_right">2.5</td>
+      <td class="gt_row gt_right">2.1</td>
+      <td class="gt_row gt_right">50.2</td>
+      <td class="gt_row gt_right">8.4</td>
+      <td class="gt_row gt_right">41.4</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Lemonade</td>
+      <td class="gt_row gt_left">2016</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_right">0.3</td>
+      <td class="gt_row gt_right">2.5</td>
+      <td class="gt_row gt_right">1.6</td>
+      <td class="gt_row gt_right">0.6</td>
+      <td class="gt_row gt_right">62.2</td>
+      <td class="gt_row gt_right">13.1</td>
+      <td class="gt_row gt_right">24.7</td>
+    </tr>
+  </tbody>
+  
+  
+</table></div>
+</div>
