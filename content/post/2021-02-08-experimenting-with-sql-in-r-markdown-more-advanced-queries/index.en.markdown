@@ -95,28 +95,6 @@ LIMIT 5
 ## 5 Taylor Swift Taylor Swift   GER              — October 24, 2006
 ```
 
-
-```r
-dbGetQuery(con, '
-SELECT DISTINCT chart
-FROM charts
-                          ')
-```
-
-```
-##    chart
-## 1     US
-## 2    AUS
-## 3    CAN
-## 4    FRA
-## 5    GER
-## 6    IRE
-## 7    JPN
-## 8     NZ
-## 9    SWE
-## 10    UK
-```
-
 # Database normalizing
 
 Please note that my goal in these examples is to work with RSQLite in order to learn more about using SQL in R, rather than presenting this as the best way to conduct these analyses.
@@ -143,7 +121,7 @@ CREATE TABLE albums
 ## [1] 0
 ```
 
-The table has been created, and currently contains zero records. We now populate this table with the unique albums found in the charts table (we could just as easily have done this from the sales table).
+We now populate this table with the unique albums found in the charts table (we could just as easily have done this from the sales table).
 
 
 ```r
@@ -306,7 +284,7 @@ The following code, for example, creates a temporary table called `US_charts` wh
   AND US_charts.chart = "US"`
 ```
 
-This can then be referenced in the selection statement at the beginning of the query, which specifies we want to extract `US_charts.chart_position AS US_chart`.  
+This temporary table can then be referenced in the SELECT statement at the beginning of the query, which specifies we want to extract `US_charts.chart_position AS US_chart`.  
 
 Note that specific code for pivoting data varies depending on SQL vendor, and Microsoft SQL server uses [PIVOT and UNPIVOT](https://docs.microsoft.com/en-us/sql/t-sql/queries/from-using-pivot-and-unpivot?view=sql-server-ver15) operators. 
 
@@ -483,7 +461,7 @@ df %>%
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#nsenzcmvhh .gt_table {
+#nkybvopvnn .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -508,7 +486,7 @@ df %>%
   border-left-color: #D3D3D3;
 }
 
-#nsenzcmvhh .gt_heading {
+#nkybvopvnn .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -520,7 +498,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#nsenzcmvhh .gt_title {
+#nkybvopvnn .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -530,7 +508,7 @@ df %>%
   border-bottom-width: 0;
 }
 
-#nsenzcmvhh .gt_subtitle {
+#nkybvopvnn .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -540,13 +518,13 @@ df %>%
   border-top-width: 0;
 }
 
-#nsenzcmvhh .gt_bottom_border {
+#nkybvopvnn .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#nsenzcmvhh .gt_col_headings {
+#nkybvopvnn .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -561,7 +539,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#nsenzcmvhh .gt_col_heading {
+#nkybvopvnn .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -581,7 +559,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#nsenzcmvhh .gt_column_spanner_outer {
+#nkybvopvnn .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -593,15 +571,15 @@ df %>%
   padding-right: 4px;
 }
 
-#nsenzcmvhh .gt_column_spanner_outer:first-child {
+#nkybvopvnn .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#nsenzcmvhh .gt_column_spanner_outer:last-child {
+#nkybvopvnn .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#nsenzcmvhh .gt_column_spanner {
+#nkybvopvnn .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -613,7 +591,7 @@ df %>%
   width: 100%;
 }
 
-#nsenzcmvhh .gt_group_heading {
+#nkybvopvnn .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -635,7 +613,7 @@ df %>%
   vertical-align: middle;
 }
 
-#nsenzcmvhh .gt_empty_group_heading {
+#nkybvopvnn .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -650,15 +628,15 @@ df %>%
   vertical-align: middle;
 }
 
-#nsenzcmvhh .gt_from_md > :first-child {
+#nkybvopvnn .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#nsenzcmvhh .gt_from_md > :last-child {
+#nkybvopvnn .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#nsenzcmvhh .gt_row {
+#nkybvopvnn .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -677,7 +655,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#nsenzcmvhh .gt_stub {
+#nkybvopvnn .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -689,7 +667,7 @@ df %>%
   padding-left: 12px;
 }
 
-#nsenzcmvhh .gt_summary_row {
+#nkybvopvnn .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -699,7 +677,7 @@ df %>%
   padding-right: 5px;
 }
 
-#nsenzcmvhh .gt_first_summary_row {
+#nkybvopvnn .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -709,7 +687,7 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#nsenzcmvhh .gt_grand_summary_row {
+#nkybvopvnn .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -719,7 +697,7 @@ df %>%
   padding-right: 5px;
 }
 
-#nsenzcmvhh .gt_first_grand_summary_row {
+#nkybvopvnn .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -729,11 +707,11 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#nsenzcmvhh .gt_striped {
+#nkybvopvnn .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#nsenzcmvhh .gt_table_body {
+#nkybvopvnn .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -742,7 +720,7 @@ df %>%
   border-bottom-color: #D3D3D3;
 }
 
-#nsenzcmvhh .gt_footnotes {
+#nkybvopvnn .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -756,13 +734,13 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#nsenzcmvhh .gt_footnote {
+#nkybvopvnn .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#nsenzcmvhh .gt_sourcenotes {
+#nkybvopvnn .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -776,46 +754,46 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#nsenzcmvhh .gt_sourcenote {
+#nkybvopvnn .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#nsenzcmvhh .gt_left {
+#nkybvopvnn .gt_left {
   text-align: left;
 }
 
-#nsenzcmvhh .gt_center {
+#nkybvopvnn .gt_center {
   text-align: center;
 }
 
-#nsenzcmvhh .gt_right {
+#nkybvopvnn .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#nsenzcmvhh .gt_font_normal {
+#nkybvopvnn .gt_font_normal {
   font-weight: normal;
 }
 
-#nsenzcmvhh .gt_font_bold {
+#nkybvopvnn .gt_font_bold {
   font-weight: bold;
 }
 
-#nsenzcmvhh .gt_font_italic {
+#nkybvopvnn .gt_font_italic {
   font-style: italic;
 }
 
-#nsenzcmvhh .gt_super {
+#nkybvopvnn .gt_super {
   font-size: 65%;
 }
 
-#nsenzcmvhh .gt_footnote_marks {
+#nkybvopvnn .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
-<div id="nsenzcmvhh" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+<div id="nkybvopvnn" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
   <thead class="gt_header">
     <tr>
       <th colspan="7" class="gt_heading gt_title gt_font_normal" style><strong>Taylor Swift has higher US and Total sales than Beyoncé, but Beyoncé's international sales are higher</strong></th>
@@ -1007,12 +985,12 @@ df %>%
 
 In upcoming blog posts, I plan to further refine this summary table using the `gt` package, and to use `ggplot2` and `ggflags` to graph data by country. But first, we need to update country codes in our data to be consistent with those used in `ggflags`.
 
-Last time we worked with this data, we updated the country field to use 'WW' consistently to reflect worldwide sales. Let's update multiple country codes at once, using an UPDATE query and a series of CASE WHEN statements:
+Last time we worked with this data, we updated the country field to use 'WW' consistently to reflect worldwide sales. Let's update multiple country codes from `sales_new` at once, using an UPDATE query and a series of CASE WHEN statements:
 
 
 ```r
 dbExecute(con, "
-UPDATE sales
+UPDATE sales_new
 SET country = CASE WHEN country = 'World' THEN 'WW'
                     WHEN country = 'WW' THEN 'WW'
                     WHEN country = 'AUS' THEN 'AU'

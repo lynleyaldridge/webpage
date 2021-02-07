@@ -71,13 +71,6 @@ LIMIT 5
                           ')
 ```
 
-```{r}
-dbGetQuery(con, '
-SELECT DISTINCT chart
-FROM charts
-                          ')
-```
-
 # Database normalizing
 
 Please note that my goal in these examples is to work with RSQLite in order to learn more about using SQL in R, rather than presenting this as the best way to conduct these analyses.
@@ -99,7 +92,7 @@ CREATE TABLE albums
                           ")
 ```
 
-The table has been created, and currently contains zero records. We now populate this table with the unique albums found in the charts table (we could just as easily have done this from the sales table).
+We now populate this table with the unique albums found in the charts table (we could just as easily have done this from the sales table).
 
 ```{r}
 dbExecute(con, "
@@ -208,7 +201,7 @@ The following code, for example, creates a temporary table called `US_charts` wh
 
 ```
 
-This can then be referenced in the selection statement at the beginning of the query, which specifies we want to extract `US_charts.chart_position AS US_chart`.  
+This temporary table can then be referenced in the SELECT statement at the beginning of the query, which specifies we want to extract `US_charts.chart_position AS US_chart`.  
 
 Note that specific code for pivoting data varies depending on SQL vendor, and Microsoft SQL server uses [PIVOT and UNPIVOT](https://docs.microsoft.com/en-us/sql/t-sql/queries/from-using-pivot-and-unpivot?view=sql-server-ver15) operators. 
 
@@ -348,11 +341,11 @@ df %>%
 
 In upcoming blog posts, I plan to further refine this summary table using the `gt` package, and to use `ggplot2` and `ggflags` to graph data by country. But first, we need to update country codes in our data to be consistent with those used in `ggflags`.
 
-Last time we worked with this data, we updated the country field to use 'WW' consistently to reflect worldwide sales. Let's update multiple country codes at once, using an UPDATE query and a series of CASE WHEN statements:
+Last time we worked with this data, we updated the country field to use 'WW' consistently to reflect worldwide sales. Let's update multiple country codes from `sales_new` at once, using an UPDATE query and a series of CASE WHEN statements:
 
 ```{r message = FALSE}
 dbExecute(con, "
-UPDATE sales
+UPDATE sales_new
 SET country = CASE WHEN country = 'World' THEN 'WW'
                     WHEN country = 'WW' THEN 'WW'
                     WHEN country = 'AUS' THEN 'AU'
