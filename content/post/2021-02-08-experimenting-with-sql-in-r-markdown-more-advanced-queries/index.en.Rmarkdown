@@ -1,0 +1,380 @@
+---
+title: 'More experimenting with SQL in R Markdown: Pivoting data, outputting results
+  to R, and creating a summary table using gt'
+author: Lynley Aldridge
+date: '2021-02-08'
+tags:
+  - gt
+  - Rstats
+  - SQL
+  - TidyTuesday
+  - Tutorial
+draft: yes
+slug: experimenting-with-sql-in-r-markdown-more-join-queries
+lastmod: '2021-02-08T20:01:24+11:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+---
+
+Following on from my [previous post](/2021/01/13/experimenting-with-sql/), I use SELECT and JOIN statements to pivot the Taylor Swift and Beyoncé Tidy Tuesday data using RSQLite (after normalizing the underlying database), output the results to R, and create a relatively simple summary table using gt. 
+
+# Setup
+
+As in the previous post, load packages, read in data, set-up a connection to the database and copy in the data, and clean release dates:
+
+```{r setup, message = FALSE}
+
+#load packages
+library(tidyverse)
+library(odbc)
+library(DBI)
+library(RSQLite)
+library(gt) # for tables
+
+#load data
+sales <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/sales.csv')
+charts <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/charts.csv')
+
+#create connection to database and copy data into database
+con <- dbConnect(RSQLite::SQLite(), ":memory:")
+copy_to(con, sales)
+copy_to(con, charts)
+
+#clean release dates as per previous post
+dbExecute(con, "
+UPDATE charts
+SET released = TRIM(SUBSTR(released, 1, INSTR(released, ' (')))
+WHERE INSTR(released, ' (')>0; 
+                          ")
+```
+
+# Previewing tables using SELECT and LIMIT queries 
+
+Let's quickly refresh our understanding of how this data is structured (focusing only on columns relevant for this tutorial). 
+
+```{r}
+dbGetQuery(con, '
+SELECT artist, title, country, sales, released
+FROM sales
+LIMIT 5
+                          ')
+```
+
+```{r}
+dbGetQuery(con, '
+SELECT artist, title, chart, chart_position, released
+FROM charts
+LIMIT 5
+                          ')
+```
+
+```{r}
+dbGetQuery(con, '
+SELECT DISTINCT chart
+FROM charts
+                          ')
+```
+
+# Database normalizing
+
+Please note that my goal in these examples is to work with RSQLite in order to learn more about using SQL in R, rather than presenting this as the best way to conduct these analyses.
+
+The task I set myself at the end of the last post was to join and pivot this data so that each album is represented by a single row of data, and there are separate columns for sales and chart information for each country of interest. 
+
+This process will be easier to follow if the underlying data are normalized. This is also best practice for any database working with relational data, and involves minimizing redundancies in data storage and ensuring each table serves only a single purpose. In this case, we should create a separate albums table to record the details of each album (i.e., artist, title and release dates), so edits and additions to this information need only be made in one place. We then give each album a unique ID (a primary key) that can be used to reference this album in the charts and sales tables. 
+
+First, let's create the new albums table, adding an `id` field to this table to store a unique id number for each distinct album.
+
+```{r}
+dbExecute(con, "
+CREATE TABLE albums
+  (id INTEGER NOT NULL PRIMARY KEY,
+  artist TEXT,
+  title TEXT,
+  released TEXT
+  );
+                          ")
+```
+
+The table has been created, and currently contains zero records. We now populate this table with the unique albums found in the charts table (we could just as easily have done this from the sales table).
+
+```{r}
+dbExecute(con, "
+INSERT INTO albums (artist, title, released)
+  SELECT DISTINCT artist, title, released FROM charts; 
+                            ")
+```
+
+Fourteen records have been added to this table, and viewing results with the query below shows that this has functioned as intended. Distinct albums have been added to the table, and automatically assigned a unique sequential id number. (I'm using LIMIT 5 after testing when presenting these steps to minimize display space. Omitting this statement returns the full 14 rows of data expected.)
+
+```{r}
+dbGetQuery(con, '
+SELECT *
+FROM albums
+LIMIT 5
+                          ')
+```
+
+Our next goal is to amend the charts and sales tables to reference albums by using their unique id number, rather than their title. The id column is created as a primary key in the albums table, and as a foreign key in the charts and sales tables (where it serves to point back to the album details stored in the albums table). (For example, we will use `FK_Sales_Albums` instead of album title in the `Sales` table to reference albums whose details are stored in the `Albums` table).
+
+Here we create the new sales table (`sales_new`): 
+
+```{r}
+dbExecute(con, "
+CREATE TABLE sales_new
+  (id INTEGER NOT NULL PRIMARY KEY,
+  FK_Sales_Albums,
+  country,
+  sales
+  );
+                          ")
+```
+
+Next we need to extract records to add to this table. First, let's design and test our query and check that it works as intended. We want to join the albums table to the sales tables by matching on `Albums.title = sales.title`, and extract sales by country details for each album with the correct id attached. So we select the id field from the albums table (`Albums.id`) and label this as our foreign key (`AS FK_Sales_Albums`). To complete our query, we also select the country and sales fields from the sales table: 
+
+```{r test-join-sales}
+dbGetQuery(con, '
+SELECT Albums.id AS FK_Sales_Albums, sales.country, sales.sales 
+FROM sales
+LEFT JOIN albums
+ON Albums.title = sales.title
+LIMIT 5
+                          ')
+```
+
+This process of drafting queries, verifying results, and then executing updates is one that works well when designing multi-stage queries. Let's now combine our JOIN query with an INSERT INTO query, to populate the `sales_new` table:
+
+```{r}
+dbExecute(con, "
+INSERT INTO sales_new (FK_Sales_Albums, country, sales)
+  SELECT Albums.id AS FK_Sales_Albums, sales.country, sales.sales 
+  FROM sales
+  LEFT JOIN albums
+  ON Albums.title = sales.title;
+                            ")
+```
+
+We can repeat the same process with the charts data. First, create the structure of `charts_new`:
+
+```{r}
+dbExecute(con, "
+CREATE TABLE charts_new
+  (id INTEGER NOT NULL PRIMARY KEY,
+  FK_Charts_Albums,
+  chart,
+  chart_position
+  );
+                          ")
+```
+
+Next, draft and test a query extracting peak chart positions for each album by album id.
+
+```{r test-join-charts}
+dbGetQuery(con, '
+SELECT Albums.id AS FK_Charts_Albums, charts.chart, charts.chart_position 
+FROM charts
+LEFT JOIN albums
+ON Albums.title = charts.title
+LIMIT 5
+                          ')
+```
+
+Now, combine this JOIN query with an INSERT INTO query and execute, to insert data into our new table and check that the full 140 records have been created:
+
+```{r}
+dbExecute(con, "
+INSERT INTO charts_new (FK_Charts_Albums, chart, chart_position)
+  SELECT Albums.id AS FK_Charts_Albums, charts.chart, charts.chart_position 
+  FROM charts
+  LEFT JOIN albums
+  ON Albums.title = charts.title;
+                            ")
+```
+
+## Pivoting sales data using SELECT and JOIN ON queries
+
+To pivot data so that sales data for each country is presented in a new column (using RSQLite), we can use a series of JOIN ... ON statements.
+
+The following code, for example, creates a temporary table called `US_charts` which joins rows from the `charts_new` table where `chart = "US"` with matching album ids. 
+
+```{r eval = FALSE}
+
+`LEFT JOIN charts_new AS US_charts 
+  ON US_charts.FK_Charts_Albums = albums.id 
+  AND US_charts.chart = "US"`
+
+```
+
+This can then be referenced in the selection statement at the beginning of the query, which specifies we want to extract `US_charts.chart_position AS US_chart`.  
+
+Note that specific code for pivoting data varies depending on SQL vendor, and Microsoft SQL server uses [PIVOT and UNPIVOT](https://docs.microsoft.com/en-us/sql/t-sql/queries/from-using-pivot-and-unpivot?view=sql-server-ver15) operators. 
+
+We can also add calculated fields to this query to show what percentage of each album's  worldwide sales was comprised by sales in a specified country (e.g., `SELECT US_sales.sales/WW_sales.sales*100 AS US_percent` creates a `US_percent` column, by dividing US sales by worldwide sales, then multiplying by 100). The `round()` wrapper rounds the result of the formula defining `US_percent` to the number of decimal points specified after the comma. Note that column names included in calculations must be specified in full (e.g., `US_sales.sales`), and not by aliases that will not be assigned until the SELECT statement runs (e.g., `US_sales`).
+
+What follows should be seen as a proof of concept, which I've used to extract just US charts and sales data:
+
+```{r, sales-simple}
+dbGetQuery(con, '
+
+SELECT albums.artist, albums.title, SUBSTR(albums.released, -4) AS year,
+  US_charts.chart_position AS US_chart,
+  US_sales.sales AS US_sales,
+  WW_sales.sales AS WW_sales,  
+  round(US_sales.sales/WW_sales.sales*100, 1) AS US_percent
+FROM albums
+LEFT JOIN charts_new AS US_charts
+  ON US_charts.FK_Charts_Albums = albums.id 
+  AND US_charts.chart = "US"
+LEFT JOIN sales_new AS US_sales
+  ON US_sales.FK_Sales_Albums = albums.id 
+  AND US_sales.country = "US"
+LEFT JOIN sales_new AS WW_sales
+  ON WW_sales.FK_Sales_Albums = albums.id 
+  AND (WW_sales.country = "WW" OR WW_sales.country = "World")
+                          ')
+```
+
+## Using SQL directly in R Markdown code chunks, and outputting for manipulation in R
+
+What if I now want to output this data to R to use in a prettily formatted table or figure in an R Markdown report?  In the following code chunk, I draw on [Andrew Couch's tutorial](https://www.youtube.com/watch?v=zAgTlZUugUE) again, to write SQL code directly into the R Markdown code chunk (by replacing the `{R}` prefix with the following `{sql, connection = con, output.var = "df"}`. The first part of this statement tells R Markdown that the chunk uses SQL code and specifies the connection to access the database. The second part of the statement (`output.var = "df"`) is used to save output as a dataframe named df.
+
+The query below uses the same statements as the example above, but captures UK and US chart data, US and WW sales data, and adds a new column (`other_sales`) calculating sales in countries other than the US. For ease of presentation, sales figures are now calculated in millions.  
+
+```{sql, connection = con, output.var = "df"}
+
+SELECT albums.artist, albums.title, SUBSTR(albums.released, -4) AS year,
+  US_charts.chart_position AS US_chart,
+  UK_charts.chart_position AS UK_chart,
+  round(US_sales.sales/1000000, 1) AS US_sales, 
+  round(WW_sales.sales/1000000, 1) AS WW_sales, 
+  round((WW_sales.sales - US_sales.sales)/1000000, 1) AS other_sales,
+  round(US_sales.sales/WW_sales.sales*100, 1) AS US_percent,
+  round((WW_sales.sales - US_sales.sales)/WW_sales.sales*100, 1) AS other_percent
+FROM albums
+LEFT JOIN charts_new AS US_charts
+  ON US_charts.FK_Charts_Albums = albums.id 
+  AND US_charts.chart = "US"
+LEFT JOIN charts_new AS UK_charts
+  ON UK_charts.FK_Charts_Albums = albums.id 
+  AND UK_charts.chart = "UK"
+LEFT JOIN sales_new AS US_sales
+  ON US_sales.FK_Sales_Albums = albums.id 
+  AND US_sales.country = "US"
+LEFT JOIN sales_new AS WW_sales
+  ON WW_sales.FK_Sales_Albums = albums.id 
+  AND (WW_sales.country = "WW" OR WW_sales.country = "World");
+```
+
+Let's look at the output:
+
+```{r}
+head(df)
+```
+
+# Creating a simple summary table using gt
+
+There are a plethora of packages capable of creating high quality tables using R Markdown and blogdown. Some resources for exploring these options can be found on my [resources](/../../../../resources) page. As the purpose of this particular blog post is primarily to explore the use of SQL, I've made a relatively simple table here. In creating this table (using gt as shown below) I drew on:
+
+* [the package documentation for gt](https://blog.rstudio.com/2020/04/08/great-looking-tables-gt-0-2/) 
+
+* specific instructions for [creating summary lines](https://gt.rstudio.com/articles/creating-summary-lines.html) in gt
+
+* [10+ guidelines for better tables in R](https://themockup.blog/posts/2020-09-04-10-table-rules-in-r/), in which Thomas Mock adapts for R (using gt) tables used as examples in Jon Schwabish's [Ten guidelines for better tables](https://www.cambridge.org/core/journals/journal-of-benefit-cost-analysis/article/ten-guidelines-for-better-tables/74C6FD9FEB12038A52A95B9FBCA05A12) 
+
+* code used by [gkaramanis](https://github.com/gkaramanis/tidytuesday/blob/master/2020-week40/beyonce-swift.R) to make a much more visually appealing table using gt summarizing this data 
+
+
+```{r}
+
+# define a function to create totals for summary rows, excluding na
+
+fns_labels <- list(Total = ~sum(., na.rm = TRUE))
+
+# start with the data exported from SQL database
+
+df %>%
+  
+  # select variables to include in table  
+  select(title, artist, year, US_chart, UK_chart, US_sales, other_sales, WW_sales) %>%
+  
+  # create a table using gt, grouping by artist and using title for row name
+  gt(rowname_col = "title", groupname_col = "artist") %>%
+  
+    # set column labels 
+    cols_label(
+      year = "Released",
+      US_chart = "US",
+      UK_chart = "UK",
+      US_sales = "US",
+      other_sales = "Other",
+      WW_sales = "Total") %>%
+
+   # transform NA values in all columns to "-"
+    text_transform(
+      locations = cells_body(columns = gt::everything()),
+      fn = function(x) {
+      str_replace(x, "NA", "–")
+      }
+    ) %>%
+  
+    # create headings spanning multiple columns
+    tab_spanner(label = "Chart position", columns = vars(US_chart, 
+                                                         UK_chart)) %>%
+    tab_spanner(label = "Sales ($ million)", columns = vars(US_sales,
+                                                            other_sales,
+                                                            WW_sales)) %>%
+
+    # create title and subtitle for table, use md formatting
+    tab_header(
+      title = md("**Taylor Swift has higher US and Total sales than Beyoncé, but Beyoncé's international sales are higher**"),
+      subtitle = md("*Peak chart position and sales by location*"))%>%
+  
+    # create summary rows for each group 
+    summary_rows(groups = TRUE, 
+                 columns = vars(US_sales, other_sales, WW_sales),
+                 fns = fns_labels,
+                 formatter = fmt_number, decimals = 1) %>%
+  
+    
+    # create source note for table
+    tab_source_note("Source: Billboard") 
+
+```
+
+## One more SQL trick: UPDATE query using CASE WHEN statements
+
+In upcoming blog posts, I plan to further refine this summary table using the `gt` package, and to use `ggplot2` and `ggflags` to graph data by country. But first, we need to update country codes in our data to be consistent with those used in `ggflags`.
+
+Last time we worked with this data, we updated the country field to use 'WW' consistently to reflect worldwide sales. Let's update multiple country codes at once, using an UPDATE query and a series of CASE WHEN statements:
+
+```{r message = FALSE}
+dbExecute(con, "
+UPDATE sales
+SET country = CASE WHEN country = 'World' THEN 'WW'
+                    WHEN country = 'WW' THEN 'WW'
+                    WHEN country = 'AUS' THEN 'AU'
+                    WHEN country = 'JPN' THEN 'JP'
+                    WHEN country = 'UK' THEN 'GB'
+                    WHEN country = 'CAN' THEN 'CA'
+                    WHEN country = 'FRA' THEN 'FR'
+                    WHEN country = 'FR' THEN 'FR'
+                    WHEN country = 'US' THEN 'US'
+                    WHEN country = 'NA' THEN 'NA'
+                    END;
+                          ")
+```
+
+## Next steps
+
+As outlined above, the next steps for this particular project for me are to further refine my output table using `gt` (I'm wanting to include a barplot visualizing US sales as a percentage of total sales), and using `ggplot2` and `ggflags` to create bar plots showing sales data by country, assigning a flag to each bar.  Once again, however, these are questions for a future post. 
+
+## Finally, remember to disconnect
+
+At the end of this process, best practice is always to disconnect from the database.
+
+```{r}
+dbDisconnect(con)
+```

@@ -1,16 +1,17 @@
 ---
-title: "More experimenting with SQL in R Markdown: Pivoting data,
-  outputting results to R, and creating a summary table using gt"
+title: 'More experimenting with SQL in R Markdown: Pivoting data, outputting results
+  to R, and creating a summary table using gt'
 author: Lynley Aldridge
-date: '2021-01-30'
+date: '2021-02-08'
 tags:
+  - gt
   - Rstats
   - SQL
-  - Tutorial
   - TidyTuesday
+  - Tutorial
 draft: yes
 slug: experimenting-with-sql-in-r-markdown-more-join-queries
-lastmod: '2021-01-30T20:01:24+11:00'
+lastmod: '2021-02-08T20:01:24+11:00'
 featured: no
 image:
   caption: ''
@@ -18,7 +19,7 @@ image:
   preview_only: no
 ---
 
-Following on from my [previous post](/2021/01/13/experimenting-with-sql/), I use SELECT and JOIN statements to pivot the Taylor Swift and Beyoncé Tidy Tuesday data using RSQLite, output the results to R, and create a relatively simple summary table using gt. 
+Following on from my [previous post](/2021/01/13/experimenting-with-sql/), I use SELECT and JOIN statements to pivot the Taylor Swift and Beyoncé Tidy Tuesday data using RSQLite (after normalizing the underlying database), output the results to R, and create a relatively simple summary table using gt. 
 
 # Setup
 
@@ -56,7 +57,7 @@ WHERE INSTR(released, ' (')>0;
 
 # Previewing tables using SELECT and LIMIT queries 
 
-Let's quickly refresh our understanding of how this data is structured. 
+Let's quickly refresh our understanding of how this data is structured (focusing only on columns relevant for this tutorial). 
 
 
 ```r
@@ -94,41 +95,220 @@ LIMIT 5
 ## 5 Taylor Swift Taylor Swift   GER              — October 24, 2006
 ```
 
-# Pivoting sales data using SELECT WHERE and JOIN queries
 
-Please note that I am working with RSQLite in these examples in order to learn more about using SQL in R, rather than presenting this as the best way to conduct these analyses.
+```r
+dbGetQuery(con, '
+SELECT DISTINCT chart
+FROM charts
+                          ')
+```
 
-## Revising simple JOIN queries
+```
+##    chart
+## 1     US
+## 2    AUS
+## 3    CAN
+## 4    FRA
+## 5    GER
+## 6    IRE
+## 7    JPN
+## 8     NZ
+## 9    SWE
+## 10    UK
+```
 
-First, let's review the JOIN query we used in the previous post to combine data from the charts and sales tables:
+# Database normalizing
+
+Please note that my goal in these examples is to work with RSQLite in order to learn more about using SQL in R, rather than presenting this as the best way to conduct these analyses.
+
+The task I set myself at the end of the last post was to join and pivot this data so that each album is represented by a single row of data, and there are separate columns for sales and chart information for each country of interest. 
+
+This process will be easier to follow if the underlying data are normalized. This is also best practice for any database working with relational data, and involves minimizing redundancies in data storage and ensuring each table serves only a single purpose. In this case, we should create a separate albums table to record the details of each album (i.e., artist, title and release dates), so edits and additions to this information need only be made in one place. We then give each album a unique ID (a primary key) that can be used to reference this album in the charts and sales tables. 
+
+First, let's create the new albums table, adding an `id` field to this table to store a unique id number for each distinct album.
+
+
+```r
+dbExecute(con, "
+CREATE TABLE albums
+  (id INTEGER NOT NULL PRIMARY KEY,
+  artist TEXT,
+  title TEXT,
+  released TEXT
+  );
+                          ")
+```
+
+```
+## [1] 0
+```
+
+The table has been created, and currently contains zero records. We now populate this table with the unique albums found in the charts table (we could just as easily have done this from the sales table).
+
+
+```r
+dbExecute(con, "
+INSERT INTO albums (artist, title, released)
+  SELECT DISTINCT artist, title, released FROM charts; 
+                            ")
+```
+
+```
+## [1] 14
+```
+
+Fourteen records have been added to this table, and viewing results with the query below shows that this has functioned as intended. Distinct albums have been added to the table, and automatically assigned a unique sequential id number. (I'm using LIMIT 5 after testing when presenting these steps to minimize display space. Omitting this statement returns the full 14 rows of data expected.)
 
 
 ```r
 dbGetQuery(con, '
-SELECT charts.artist, charts.title, SUBSTR(charts.released, -4) as released, charts.chart, charts.chart_position as position, sales.sales  
-FROM charts
-LEFT JOIN sales
-ON charts.chart = sales.country and
-charts.title = sales.title
-WHERE charts.chart IN ("US", "UK")
-ORDER BY charts.artist DESC, released ASC
+SELECT *
+FROM albums
 LIMIT 5
                           ')
 ```
 
 ```
-##         artist        title released chart position   sales
-## 1 Taylor Swift Taylor Swift     2006    US        5 5720000
-## 2 Taylor Swift Taylor Swift     2006    UK       81      NA
-## 3 Taylor Swift     Fearless     2008    US        1 7180000
-## 4 Taylor Swift     Fearless     2008    UK        5  609000
-## 5 Taylor Swift    Speak Now     2010    US        1 4694000
+##   id       artist        title          released
+## 1  1 Taylor Swift Taylor Swift  October 24, 2006
+## 2  2 Taylor Swift     Fearless November 11, 2008
+## 3  3 Taylor Swift    Speak Now  October 25, 2010
+## 4  4 Taylor Swift          Red  October 22, 2012
+## 5  5 Taylor Swift         1989  October 27, 2014
 ```
 
-## Pivoting sales data using SELECT WHERE and JOIN queries
+Our next goal is to amend the charts and sales tables to reference albums by using their unique id number, rather than their title. The id column is created as a primary key in the albums table, and as a foreign key in the charts and sales tables (where it serves to point back to the album details stored in the albums table). (For example, we will use `FK_Sales_Albums` instead of album title in the `Sales` table to reference albums whose details are stored in the `Albums` table).
 
-To pivot data so that sales data for each country is presented in a new column (using RSQLite), we can use a series of SELECT and JOIN statements. 
-The code below offers a simple illustration, using SELECT WHERE statements (in parentheses) to SELECT relevant rows (i.e., `SELECT artist, title, chart_position FROM charts WHERE chart = "US"` as a temporary table called `US_charts`) and SELECT and JOIN statements to combine extracted columns from the specified temporary tables with the sales and charts tables. (This code was created for sqlite using modified examples from [Peruz and Jeremy Field](https://stackoverflow.com/questions/37170958/how-do-i-pivot-values-into-columns-with-sqlite) on stackoverflow.) Note that specific code for pivoting data varies depending on SQL vendor, and Microsoft SQL server uses [PIVOT and UNPIVOT](https://docs.microsoft.com/en-us/sql/t-sql/queries/from-using-pivot-and-unpivot?view=sql-server-ver15) operators. 
+Here we create the new sales table (`sales_new`): 
+
+
+```r
+dbExecute(con, "
+CREATE TABLE sales_new
+  (id INTEGER NOT NULL PRIMARY KEY,
+  FK_Sales_Albums,
+  country,
+  sales
+  );
+                          ")
+```
+
+```
+## [1] 0
+```
+
+Next we need to extract records to add to this table. First, let's design and test our query and check that it works as intended. We want to join the albums table to the sales tables by matching on `Albums.title = sales.title`, and extract sales by country details for each album with the correct id attached. So we select the id field from the albums table (`Albums.id`) and label this as our foreign key (`AS FK_Sales_Albums`). To complete our query, we also select the country and sales fields from the sales table: 
+
+
+```r
+dbGetQuery(con, '
+SELECT Albums.id AS FK_Sales_Albums, sales.country, sales.sales 
+FROM sales
+LEFT JOIN albums
+ON Albums.title = sales.title
+LIMIT 5
+                          ')
+```
+
+```
+##   FK_Sales_Albums country    sales
+## 1               1      US  5720000
+## 2               2      WW 12000000
+## 3               2      US  7180000
+## 4               2     AUS   500000
+## 5               2      UK   609000
+```
+
+This process of drafting queries, verifying results, and then executing updates is one that works well when designing multi-stage queries. Let's now combine our JOIN query with an INSERT INTO query, to populate the `sales_new` table:
+
+
+```r
+dbExecute(con, "
+INSERT INTO sales_new (FK_Sales_Albums, country, sales)
+  SELECT Albums.id AS FK_Sales_Albums, sales.country, sales.sales 
+  FROM sales
+  LEFT JOIN albums
+  ON Albums.title = sales.title;
+                            ")
+```
+
+```
+## [1] 48
+```
+
+We can repeat the same process with the charts data. First, create the structure of `charts_new`:
+
+
+```r
+dbExecute(con, "
+CREATE TABLE charts_new
+  (id INTEGER NOT NULL PRIMARY KEY,
+  FK_Charts_Albums,
+  chart,
+  chart_position
+  );
+                          ")
+```
+
+```
+## [1] 0
+```
+
+Next, draft and test a query extracting peak chart positions for each album by album id.
+
+
+```r
+dbGetQuery(con, '
+SELECT Albums.id AS FK_Charts_Albums, charts.chart, charts.chart_position 
+FROM charts
+LEFT JOIN albums
+ON Albums.title = charts.title
+LIMIT 5
+                          ')
+```
+
+```
+##   FK_Charts_Albums chart chart_position
+## 1                1    US              5
+## 2                1   AUS             33
+## 3                1   CAN             14
+## 4                1   FRA              —
+## 5                1   GER              —
+```
+
+Now, combine this JOIN query with an INSERT INTO query and execute, to insert data into our new table and check that the full 140 records have been created:
+
+
+```r
+dbExecute(con, "
+INSERT INTO charts_new (FK_Charts_Albums, chart, chart_position)
+  SELECT Albums.id AS FK_Charts_Albums, charts.chart, charts.chart_position 
+  FROM charts
+  LEFT JOIN albums
+  ON Albums.title = charts.title;
+                            ")
+```
+
+```
+## [1] 140
+```
+
+## Pivoting sales data using SELECT and JOIN ON queries
+
+To pivot data so that sales data for each country is presented in a new column (using RSQLite), we can use a series of JOIN ... ON statements.
+
+The following code, for example, creates a temporary table called `US_charts` which joins rows from the `charts_new` table where `chart = "US"` with matching album ids. 
+
+
+```r
+`LEFT JOIN charts_new AS US_charts 
+  ON US_charts.FK_Charts_Albums = albums.id 
+  AND US_charts.chart = "US"`
+```
+
+This can then be referenced in the selection statement at the beginning of the query, which specifies we want to extract `US_charts.chart_position AS US_chart`.  
+
+Note that specific code for pivoting data varies depending on SQL vendor, and Microsoft SQL server uses [PIVOT and UNPIVOT](https://docs.microsoft.com/en-us/sql/t-sql/queries/from-using-pivot-and-unpivot?view=sql-server-ver15) operators. 
 
 We can also add calculated fields to this query to show what percentage of each album's  worldwide sales was comprised by sales in a specified country (e.g., `SELECT US_sales.sales/WW_sales.sales*100 AS US_percent` creates a `US_percent` column, by dividing US sales by worldwide sales, then multiplying by 100). The `round()` wrapper rounds the result of the formula defining `US_percent` to the number of decimal points specified after the comma. Note that column names included in calculations must be specified in full (e.g., `US_sales.sales`), and not by aliases that will not be assigned until the SELECT statement runs (e.g., `US_sales`).
 
@@ -137,22 +317,22 @@ What follows should be seen as a proof of concept, which I've used to extract ju
 
 ```r
 dbGetQuery(con, '
-SELECT charts.artist, charts.title, SUBSTR(charts.released, -4) AS year, 
-  US_charts.chart_position as US_chart,
-  US_sales.sales AS US_sales, 
-  WW_sales.sales AS WW_sales, 
+
+SELECT albums.artist, albums.title, SUBSTR(albums.released, -4) AS year,
+  US_charts.chart_position AS US_chart,
+  US_sales.sales AS US_sales,
+  WW_sales.sales AS WW_sales,  
   round(US_sales.sales/WW_sales.sales*100, 1) AS US_percent
-FROM charts
-LEFT JOIN (SELECT artist, title, chart_position FROM charts WHERE chart = "US") AS US_charts
-ON charts.title = US_charts.title
-LEFT JOIN sales
-ON charts.chart = sales.country and charts.title = sales.title
-LEFT JOIN (SELECT artist, title, sales FROM sales WHERE country = "US") AS US_sales
-  ON sales.title = US_sales.title
-LEFT JOIN (SELECT artist, title, sales FROM sales WHERE country = "WW" OR country = "World") AS WW_sales
-  ON sales.title = WW_sales.title
-GROUP BY charts.artist, charts.title
-ORDER BY charts.artist DESC, year ASC;
+FROM albums
+LEFT JOIN charts_new AS US_charts
+  ON US_charts.FK_Charts_Albums = albums.id 
+  AND US_charts.chart = "US"
+LEFT JOIN sales_new AS US_sales
+  ON US_sales.FK_Sales_Albums = albums.id 
+  AND US_sales.country = "US"
+LEFT JOIN sales_new AS WW_sales
+  ON WW_sales.FK_Sales_Albums = albums.id 
+  AND (WW_sales.country = "WW" OR WW_sales.country = "World")
                           ')
 ```
 
@@ -178,36 +358,32 @@ ORDER BY charts.artist DESC, year ASC;
 
 What if I now want to output this data to R to use in a prettily formatted table or figure in an R Markdown report?  In the following code chunk, I draw on [Andrew Couch's tutorial](https://www.youtube.com/watch?v=zAgTlZUugUE) again, to write SQL code directly into the R Markdown code chunk (by replacing the `{R}` prefix with the following `{sql, connection = con, output.var = "df"}`. The first part of this statement tells R Markdown that the chunk uses SQL code and specifies the connection to access the database. The second part of the statement (`output.var = "df"`) is used to save output as a dataframe named df.
 
-The query below uses the same statements as the example above, but captures UK and US data, and adds a new column (`other_sales`) calculating sales in countries other than the US and UK.  
+The query below uses the same statements as the example above, but captures UK and US chart data, US and WW sales data, and adds a new column (`other_sales`) calculating sales in countries other than the US. For ease of presentation, sales figures are now calculated in millions.  
 
 
 ```sql
 
-SELECT charts.artist, charts.title, SUBSTR(charts.released, -4) AS year, 
+SELECT albums.artist, albums.title, SUBSTR(albums.released, -4) AS year,
   US_charts.chart_position AS US_chart,
   UK_charts.chart_position AS UK_chart,
   round(US_sales.sales/1000000, 1) AS US_sales, 
-  round(UK_sales.sales/1000000, 1) AS UK_sales, 
   round(WW_sales.sales/1000000, 1) AS WW_sales, 
-  round((WW_sales.sales - US_sales.sales - UK_sales.sales)/1000000, 1) AS other_sales,
+  round((WW_sales.sales - US_sales.sales)/1000000, 1) AS other_sales,
   round(US_sales.sales/WW_sales.sales*100, 1) AS US_percent,
-  round(UK_sales.sales/WW_sales.sales*100, 1) AS UK_percent,
-  round((WW_sales.sales - US_sales.sales - UK_sales.sales)/WW_sales.sales*100, 1) AS other_percent
-FROM charts
-LEFT JOIN (SELECT artist, title, chart_position FROM charts WHERE chart = "US") AS US_charts
-  ON charts.title = US_charts.title
-LEFT JOIN (SELECT artist, title, chart_position FROM charts WHERE chart = "UK") AS UK_charts
-  ON charts.title = UK_charts.title
-LEFT JOIN sales
-  ON charts.chart = sales.country and charts.title = sales.title
-LEFT JOIN (SELECT artist, title, sales FROM sales WHERE country = "US") AS US_sales
-  ON sales.title = US_sales.title
-LEFT JOIN (SELECT artist, title, sales FROM sales WHERE country = "UK") AS UK_sales
-  ON sales.title = UK_sales.title
-LEFT JOIN (SELECT artist, title, sales FROM sales WHERE country = "WW" OR country = "World") AS WW_sales
-  ON sales.title = WW_sales.title
-GROUP BY charts.artist, charts.title
-ORDER BY charts.artist DESC, year ASC;
+  round((WW_sales.sales - US_sales.sales)/WW_sales.sales*100, 1) AS other_percent
+FROM albums
+LEFT JOIN charts_new AS US_charts
+  ON US_charts.FK_Charts_Albums = albums.id 
+  AND US_charts.chart = "US"
+LEFT JOIN charts_new AS UK_charts
+  ON UK_charts.FK_Charts_Albums = albums.id 
+  AND UK_charts.chart = "UK"
+LEFT JOIN sales_new AS US_sales
+  ON US_sales.FK_Sales_Albums = albums.id 
+  AND US_sales.country = "US"
+LEFT JOIN sales_new AS WW_sales
+  ON WW_sales.FK_Sales_Albums = albums.id 
+  AND (WW_sales.country = "WW" OR WW_sales.country = "World");
 ```
 
 Let's look at the output:
@@ -218,25 +394,25 @@ head(df)
 ```
 
 ```
-##         artist        title year US_chart UK_chart US_sales UK_sales WW_sales
-## 1 Taylor Swift Taylor Swift 2006        5       81      5.7       NA       NA
-## 2 Taylor Swift     Fearless 2008        1        5      7.2      0.6     12.0
-## 3 Taylor Swift    Speak Now 2010        1        6      4.7      0.2      5.0
-## 4 Taylor Swift          Red 2012        1        1      4.5      0.7      6.0
-## 5 Taylor Swift         1989 2014        1        1      6.2      1.3     10.1
-## 6 Taylor Swift   Reputation 2017        1        1      2.3      0.4      4.5
-##   other_sales US_percent UK_percent other_percent
-## 1          NA         NA         NA            NA
-## 2         4.2       59.8        5.1          35.1
-## 3         0.1       93.9        3.4           2.7
-## 4         0.8       74.4       11.6          14.0
-## 5         2.6       61.5       12.4          26.1
-## 6         1.8       51.1        8.4          40.5
+##         artist        title year US_chart UK_chart US_sales WW_sales
+## 1 Taylor Swift Taylor Swift 2006        5       81      5.7       NA
+## 2 Taylor Swift     Fearless 2008        1        5      7.2     12.0
+## 3 Taylor Swift    Speak Now 2010        1        6      4.7      5.0
+## 4 Taylor Swift          Red 2012        1        1      4.5      6.0
+## 5 Taylor Swift         1989 2014        1        1      6.2     10.1
+## 6 Taylor Swift   Reputation 2017        1        1      2.3      4.5
+##   other_sales US_percent other_percent
+## 1          NA         NA            NA
+## 2         4.8       59.8          40.2
+## 3         0.3       93.9           6.1
+## 4         1.5       74.4          25.6
+## 5         3.9       61.5          38.5
+## 6         2.2       51.1          48.9
 ```
 
 # Creating a simple summary table using gt
 
-There are a plethora of packages capable of creating high quality tables in R Markdown reports. Some resources for exploring these options can be found on my [resources](/../../../../resources) page. As the purpose of this particular blog post is primarily to explore the use of SQL in R Markdown, I've made a relatively simple table here. In creating this table (using gt as shown below) I drew on:
+There are a plethora of packages capable of creating high quality tables using R Markdown and blogdown. Some resources for exploring these options can be found on my [resources](/../../../../resources) page. As the purpose of this particular blog post is primarily to explore the use of SQL, I've made a relatively simple table here. In creating this table (using gt as shown below) I drew on:
 
 * [the package documentation for gt](https://blog.rstudio.com/2020/04/08/great-looking-tables-gt-0-2/) 
 
@@ -244,24 +420,21 @@ There are a plethora of packages capable of creating high quality tables in R Ma
 
 * [10+ guidelines for better tables in R](https://themockup.blog/posts/2020-09-04-10-table-rules-in-r/), in which Thomas Mock adapts for R (using gt) tables used as examples in Jon Schwabish's [Ten guidelines for better tables](https://www.cambridge.org/core/journals/journal-of-benefit-cost-analysis/article/ten-guidelines-for-better-tables/74C6FD9FEB12038A52A95B9FBCA05A12) 
 
-* code used by [gkaramanis](https://github.com/gkaramanis/tidytuesday/blob/master/2020-week40/beyonce-swift.R) to make a far more involved table using gt to professionally display this data 
+* code used by [gkaramanis](https://github.com/gkaramanis/tidytuesday/blob/master/2020-week40/beyonce-swift.R) to make a much more visually appealing table using gt summarizing this data 
 
 
 
 ```r
-# define functions used to exclude NA values from total calculations
-# source: https://gt.rstudio.com/articles/creating-summary-lines.html
+# define a function to create totals for summary rows, excluding na
 
 fns_labels <- list(Total = ~sum(., na.rm = TRUE))
-
 
 # start with the data exported from SQL database
 
 df %>%
   
   # select variables to include in table  
-  select(title, artist, year, US_chart, UK_chart, US_sales, WW_sales, 
-          US_percent) %>%
+  select(title, artist, year, US_chart, UK_chart, US_sales, other_sales, WW_sales) %>%
   
   # create a table using gt, grouping by artist and using title for row name
   gt(rowname_col = "title", groupname_col = "artist") %>%
@@ -272,8 +445,8 @@ df %>%
       US_chart = "US",
       UK_chart = "UK",
       US_sales = "US",
-      WW_sales = "WW",
-      US_percent = "US sales (%)") %>%
+      other_sales = "Other",
+      WW_sales = "Total") %>%
 
    # transform NA values in all columns to "-"
     text_transform(
@@ -287,32 +460,30 @@ df %>%
     tab_spanner(label = "Chart position", columns = vars(US_chart, 
                                                          UK_chart)) %>%
     tab_spanner(label = "Sales ($ million)", columns = vars(US_sales,
+                                                            other_sales,
                                                             WW_sales)) %>%
-
-    # align specified cells (containing numeric values) right
-    cols_align(align = "right", columns = c("US_chart", "UK_chart",
-                                            "US_sales", "WW_sales",
-                                            "US_percent")) %>%
 
     # create title and subtitle for table, use md formatting
     tab_header(
-      title = md("**Taylor Swift has sold more albums than Beyoncé, but owes a greater proportion of her success to US sales than Beyoncé**"),
-      subtitle = md("*Peak chart position, sales, and US sales as a percentage of total sales by album*"))%>%
+      title = md("**Taylor Swift has higher US and Total sales than Beyoncé, but Beyoncé's international sales are higher**"),
+      subtitle = md("*Peak chart position and sales by location*"))%>%
   
     # create summary rows for each group 
     summary_rows(groups = TRUE, 
-                 columns = vars(US_sales, WW_sales),
-                 fns = fns_labels) %>%
-
+                 columns = vars(US_sales, other_sales, WW_sales),
+                 fns = fns_labels,
+                 formatter = fmt_number, decimals = 1) %>%
+  
+    
     # create source note for table
-    tab_source_note("Source: Wikipedia, October 2020") 
+    tab_source_note("Source: Billboard") 
 ```
 
 <!--html_preserve--><style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#npfoiizhon .gt_table {
+#nsenzcmvhh .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -337,7 +508,7 @@ df %>%
   border-left-color: #D3D3D3;
 }
 
-#npfoiizhon .gt_heading {
+#nsenzcmvhh .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -349,7 +520,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#npfoiizhon .gt_title {
+#nsenzcmvhh .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -359,7 +530,7 @@ df %>%
   border-bottom-width: 0;
 }
 
-#npfoiizhon .gt_subtitle {
+#nsenzcmvhh .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -369,13 +540,13 @@ df %>%
   border-top-width: 0;
 }
 
-#npfoiizhon .gt_bottom_border {
+#nsenzcmvhh .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#npfoiizhon .gt_col_headings {
+#nsenzcmvhh .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -390,7 +561,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#npfoiizhon .gt_col_heading {
+#nsenzcmvhh .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -410,7 +581,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#npfoiizhon .gt_column_spanner_outer {
+#nsenzcmvhh .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -422,15 +593,15 @@ df %>%
   padding-right: 4px;
 }
 
-#npfoiizhon .gt_column_spanner_outer:first-child {
+#nsenzcmvhh .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#npfoiizhon .gt_column_spanner_outer:last-child {
+#nsenzcmvhh .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#npfoiizhon .gt_column_spanner {
+#nsenzcmvhh .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -442,7 +613,7 @@ df %>%
   width: 100%;
 }
 
-#npfoiizhon .gt_group_heading {
+#nsenzcmvhh .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -464,7 +635,7 @@ df %>%
   vertical-align: middle;
 }
 
-#npfoiizhon .gt_empty_group_heading {
+#nsenzcmvhh .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -479,15 +650,15 @@ df %>%
   vertical-align: middle;
 }
 
-#npfoiizhon .gt_from_md > :first-child {
+#nsenzcmvhh .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#npfoiizhon .gt_from_md > :last-child {
+#nsenzcmvhh .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#npfoiizhon .gt_row {
+#nsenzcmvhh .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -506,7 +677,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#npfoiizhon .gt_stub {
+#nsenzcmvhh .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -518,7 +689,7 @@ df %>%
   padding-left: 12px;
 }
 
-#npfoiizhon .gt_summary_row {
+#nsenzcmvhh .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -528,7 +699,7 @@ df %>%
   padding-right: 5px;
 }
 
-#npfoiizhon .gt_first_summary_row {
+#nsenzcmvhh .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -538,7 +709,7 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#npfoiizhon .gt_grand_summary_row {
+#nsenzcmvhh .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -548,7 +719,7 @@ df %>%
   padding-right: 5px;
 }
 
-#npfoiizhon .gt_first_grand_summary_row {
+#nsenzcmvhh .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -558,11 +729,11 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#npfoiizhon .gt_striped {
+#nsenzcmvhh .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#npfoiizhon .gt_table_body {
+#nsenzcmvhh .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -571,7 +742,7 @@ df %>%
   border-bottom-color: #D3D3D3;
 }
 
-#npfoiizhon .gt_footnotes {
+#nsenzcmvhh .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -585,13 +756,13 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#npfoiizhon .gt_footnote {
+#nsenzcmvhh .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#npfoiizhon .gt_sourcenotes {
+#nsenzcmvhh .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -605,52 +776,52 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#npfoiizhon .gt_sourcenote {
+#nsenzcmvhh .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#npfoiizhon .gt_left {
+#nsenzcmvhh .gt_left {
   text-align: left;
 }
 
-#npfoiizhon .gt_center {
+#nsenzcmvhh .gt_center {
   text-align: center;
 }
 
-#npfoiizhon .gt_right {
+#nsenzcmvhh .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#npfoiizhon .gt_font_normal {
+#nsenzcmvhh .gt_font_normal {
   font-weight: normal;
 }
 
-#npfoiizhon .gt_font_bold {
+#nsenzcmvhh .gt_font_bold {
   font-weight: bold;
 }
 
-#npfoiizhon .gt_font_italic {
+#nsenzcmvhh .gt_font_italic {
   font-style: italic;
 }
 
-#npfoiizhon .gt_super {
+#nsenzcmvhh .gt_super {
   font-size: 65%;
 }
 
-#npfoiizhon .gt_footnote_marks {
+#nsenzcmvhh .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
-<div id="npfoiizhon" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+<div id="nsenzcmvhh" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
   <thead class="gt_header">
     <tr>
-      <th colspan="7" class="gt_heading gt_title gt_font_normal" style><strong>Taylor Swift has sold more albums than Beyoncé, but owes a greater proportion of her success to US sales than Beyoncé</strong></th>
+      <th colspan="7" class="gt_heading gt_title gt_font_normal" style><strong>Taylor Swift has higher US and Total sales than Beyoncé, but Beyoncé's international sales are higher</strong></th>
     </tr>
     <tr>
-      <th colspan="7" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style><em>Peak chart position, sales, and US sales as a percentage of total sales by album</em></th>
+      <th colspan="7" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style><em>Peak chart position and sales by location</em></th>
     </tr>
   </thead>
   <thead class="gt_col_headings">
@@ -660,16 +831,16 @@ df %>%
       <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="2">
         <span class="gt_column_spanner">Chart position</span>
       </th>
-      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="2">
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3">
         <span class="gt_column_spanner">Sales ($ million)</span>
       </th>
-      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1">US sales (%)</th>
     </tr>
     <tr>
       <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">US</th>
       <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">UK</th>
       <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">US</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">WW</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">Other</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">Total</th>
     </tr>
   </thead>
   <tbody class="gt_table_body">
@@ -679,8 +850,8 @@ df %>%
     <tr>
       <td class="gt_row gt_left gt_stub">Taylor Swift</td>
       <td class="gt_row gt_left">2006</td>
-      <td class="gt_row gt_right">5</td>
-      <td class="gt_row gt_right">81</td>
+      <td class="gt_row gt_left">5</td>
+      <td class="gt_row gt_left">81</td>
       <td class="gt_row gt_right">5.7</td>
       <td class="gt_row gt_right">–</td>
       <td class="gt_row gt_right">–</td>
@@ -688,62 +859,62 @@ df %>%
     <tr>
       <td class="gt_row gt_left gt_stub">Fearless</td>
       <td class="gt_row gt_left">2008</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">5</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">5</td>
       <td class="gt_row gt_right">7.2</td>
+      <td class="gt_row gt_right">4.8</td>
       <td class="gt_row gt_right">12.0</td>
-      <td class="gt_row gt_right">59.8</td>
     </tr>
     <tr>
       <td class="gt_row gt_left gt_stub">Speak Now</td>
       <td class="gt_row gt_left">2010</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">6</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">6</td>
       <td class="gt_row gt_right">4.7</td>
+      <td class="gt_row gt_right">0.3</td>
       <td class="gt_row gt_right">5.0</td>
-      <td class="gt_row gt_right">93.9</td>
     </tr>
     <tr>
       <td class="gt_row gt_left gt_stub">Red</td>
       <td class="gt_row gt_left">2012</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
       <td class="gt_row gt_right">4.5</td>
+      <td class="gt_row gt_right">1.5</td>
       <td class="gt_row gt_right">6.0</td>
-      <td class="gt_row gt_right">74.4</td>
     </tr>
     <tr>
       <td class="gt_row gt_left gt_stub">1989</td>
       <td class="gt_row gt_left">2014</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
       <td class="gt_row gt_right">6.2</td>
+      <td class="gt_row gt_right">3.9</td>
       <td class="gt_row gt_right">10.1</td>
-      <td class="gt_row gt_right">61.5</td>
     </tr>
     <tr>
       <td class="gt_row gt_left gt_stub">Reputation</td>
       <td class="gt_row gt_left">2017</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
       <td class="gt_row gt_right">2.3</td>
+      <td class="gt_row gt_right">2.2</td>
       <td class="gt_row gt_right">4.5</td>
-      <td class="gt_row gt_right">51.1</td>
     </tr>
     <tr>
       <td class="gt_row gt_left gt_stub">Lover</td>
       <td class="gt_row gt_left">2019</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
       <td class="gt_row gt_right">1.1</td>
+      <td class="gt_row gt_right">2.1</td>
       <td class="gt_row gt_right">3.2</td>
-      <td class="gt_row gt_right">33.9</td>
     </tr>
     <tr>
       <td class="gt_row gt_left gt_stub">Folklore</td>
       <td class="gt_row gt_left">2020</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
       <td class="gt_row gt_right">–</td>
       <td class="gt_row gt_right">–</td>
       <td class="gt_row gt_right">–</td>
@@ -751,11 +922,11 @@ df %>%
     <tr>
       <td class="gt_row gt_stub gt_right gt_summary_row gt_first_summary_row">Total</td>
       <td class="gt_row gt_left gt_summary_row gt_first_summary_row">&mdash;</td>
-      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">&mdash;</td>
-      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">&mdash;</td>
-      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">31.70</td>
-      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">40.80</td>
-      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">&mdash;</td>
+      <td class="gt_row gt_left gt_summary_row gt_first_summary_row">&mdash;</td>
+      <td class="gt_row gt_left gt_summary_row gt_first_summary_row">&mdash;</td>
+      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">31.7</td>
+      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">14.8</td>
+      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">40.8</td>
     </tr>
     <tr class="gt_group_heading_row">
       <td colspan="7" class="gt_group_heading">Beyoncé</td>
@@ -763,35 +934,35 @@ df %>%
     <tr>
       <td class="gt_row gt_left gt_stub">Dangerously in Love</td>
       <td class="gt_row gt_left">2003</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
       <td class="gt_row gt_right">5.1</td>
+      <td class="gt_row gt_right">5.9</td>
       <td class="gt_row gt_right">11.0</td>
-      <td class="gt_row gt_right">46.4</td>
     </tr>
     <tr>
       <td class="gt_row gt_left gt_stub">B'Day</td>
       <td class="gt_row gt_left">2006</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">3</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">3</td>
       <td class="gt_row gt_right">3.6</td>
+      <td class="gt_row gt_right">4.4</td>
       <td class="gt_row gt_right">8.0</td>
-      <td class="gt_row gt_right">45.1</td>
     </tr>
     <tr>
       <td class="gt_row gt_left gt_stub">I Am... Sasha Fierce</td>
       <td class="gt_row gt_left">2008</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">2</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">2</td>
       <td class="gt_row gt_right">3.4</td>
+      <td class="gt_row gt_right">4.6</td>
       <td class="gt_row gt_right">8.0</td>
-      <td class="gt_row gt_right">42.3</td>
     </tr>
     <tr>
       <td class="gt_row gt_left gt_stub">4</td>
       <td class="gt_row gt_left">2011</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
       <td class="gt_row gt_right">1.5</td>
       <td class="gt_row gt_right">–</td>
       <td class="gt_row gt_right">–</td>
@@ -799,50 +970,60 @@ df %>%
     <tr>
       <td class="gt_row gt_left gt_stub">Beyoncé</td>
       <td class="gt_row gt_left">2013</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">2</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">2</td>
+      <td class="gt_row gt_right">2.5</td>
       <td class="gt_row gt_right">2.5</td>
       <td class="gt_row gt_right">5.0</td>
-      <td class="gt_row gt_right">50.2</td>
     </tr>
     <tr>
       <td class="gt_row gt_left gt_stub">Lemonade</td>
       <td class="gt_row gt_left">2016</td>
-      <td class="gt_row gt_right">1</td>
-      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_left">1</td>
+      <td class="gt_row gt_left">1</td>
       <td class="gt_row gt_right">1.6</td>
+      <td class="gt_row gt_right">0.9</td>
       <td class="gt_row gt_right">2.5</td>
-      <td class="gt_row gt_right">62.2</td>
     </tr>
     <tr>
       <td class="gt_row gt_stub gt_right gt_summary_row gt_first_summary_row">Total</td>
       <td class="gt_row gt_left gt_summary_row gt_first_summary_row">&mdash;</td>
-      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">&mdash;</td>
-      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">&mdash;</td>
-      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">17.70</td>
-      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">34.50</td>
-      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">&mdash;</td>
+      <td class="gt_row gt_left gt_summary_row gt_first_summary_row">&mdash;</td>
+      <td class="gt_row gt_left gt_summary_row gt_first_summary_row">&mdash;</td>
+      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">17.7</td>
+      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">18.3</td>
+      <td class="gt_row gt_right gt_summary_row gt_first_summary_row">34.5</td>
     </tr>
   </tbody>
   <tfoot class="gt_sourcenotes">
     <tr>
-      <td class="gt_sourcenote" colspan="7">Source: Wikipedia, October 2020</td>
+      <td class="gt_sourcenote" colspan="7">Source: Billboard</td>
     </tr>
   </tfoot>
   
 </table></div><!--/html_preserve-->
 
-## One more SQL trick: UPDATE query using nested REPLACE statements
+## One more SQL trick: UPDATE query using CASE WHEN statements
 
-In an upcoming blog post, I plan to further refine this summary table using the `gt` package, and to use `ggplot2` and `ggflags` to graph data by country. But first, we need to update country codes in our data to be consistent with those used in `ggflags`.
+In upcoming blog posts, I plan to further refine this summary table using the `gt` package, and to use `ggplot2` and `ggflags` to graph data by country. But first, we need to update country codes in our data to be consistent with those used in `ggflags`.
 
-Last time we worked with this data, we updated the country field to use 'WW' consistently to reflect worldwide sales. Let's update multiple country codes at once, using nested replace statements based on a suggestion from [Turophile](https://stackoverflow.com/questions/28493238/how-to-replace-multiple-words-in-sqlite-database-using-update-query) on stackoverflow.
+Last time we worked with this data, we updated the country field to use 'WW' consistently to reflect worldwide sales. Let's update multiple country codes at once, using an UPDATE query and a series of CASE WHEN statements:
 
 
 ```r
 dbExecute(con, "
 UPDATE sales
-SET country = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(country, 'World', 'WW'), 'AUS', 'AU'), 'JPN', 'JP'), 'UK', 'GB'), 'CAN', 'CA'), 'FRA', 'FR');
+SET country = CASE WHEN country = 'World' THEN 'WW'
+                    WHEN country = 'WW' THEN 'WW'
+                    WHEN country = 'AUS' THEN 'AU'
+                    WHEN country = 'JPN' THEN 'JP'
+                    WHEN country = 'UK' THEN 'GB'
+                    WHEN country = 'CAN' THEN 'CA'
+                    WHEN country = 'FRA' THEN 'FR'
+                    WHEN country = 'FR' THEN 'FR'
+                    WHEN country = 'US' THEN 'US'
+                    WHEN country = 'NA' THEN 'NA'
+                    END;
                           ")
 ```
 

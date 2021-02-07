@@ -23,6 +23,50 @@ projects: []
 
 In this post I explore ways of using ggplot2 and ggflags to plot album sales and chart data from the Taylor Swift and Beyoncé Tidy Tuesday dataset, formatted via SQL [in a previous post](/2021/01/13/experimenting-with-sql/) and its followup.
 
+## Setup
+
+As in the previous post, load packages, read in data, and clean and extract data using the following syntax:
+
+```{r setup, message = FALSE}
+
+#load packages
+library(tidyverse)
+library(odbc)
+library(DBI)
+library(RSQLite)
+library(gt) # for summary tables
+library(tidytext) # for reorder_within
+
+library(ggflags) 
+
+#to install ggflags, I needed to install devtools then type into console: devtools::install_github('rensa/ggflags'); this uses circular flags but renders an error if country code not a match (e.g., for worldwide row)
+
+#library(countrycode)
+#library(ggimage)
+
+#currently not loading ggimage as it may clash with flags
+
+# library(reactable) # not available for this version of R
+
+
+#load data
+sales <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/sales.csv')
+charts <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/charts.csv')
+
+#create connection to database and copy data into database
+con <- dbConnect(RSQLite::SQLite(), ":memory:")
+copy_to(con, sales)
+copy_to(con, charts)
+
+#clean release dates as per previous post
+dbExecute(con, "
+UPDATE charts
+SET released = TRIM(SUBSTR(released, 1, INSTR(released, ' (')))
+WHERE INSTR(released, ' (')>0; 
+                          ")
+
+```
+
 ## Graphing sales data using ggplot2
 
 Here's how we can plot worldwide sales data from this dataframe by descending order of sales in a column graph, colouring columns by artist.

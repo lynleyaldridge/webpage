@@ -1,0 +1,404 @@
+---
+title: "Summary tables using gt"
+author: Lynley Aldridge
+date: '2021-02-08'
+slug: summary-tables-using-gt
+categories: []
+draft: TRUE 
+tags:
+  - Rstats
+  - Tutorial 
+  - gt
+  - TidyTuesday
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2021-01-31T20:33:29+11:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+This post shows how I experimented with more complex features of gt, to create a summary table using the Taylor Swift and Beyoncé Tidy Tuesday data, and drawing on an example 
+
+## Setup
+
+As in the previous post, load packages, read in data, and clean and extract data using the following syntax:
+
+```{r setup, message = FALSE}
+
+#load packages
+library(tidyverse)
+library(odbc)
+library(DBI)
+library(RSQLite)
+library(gt) # for summary tables
+
+# library(reactable) # not available for this version of R
+
+#load data
+sales <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/sales.csv')
+charts <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/charts.csv')
+
+#create connection to database and copy data into database
+con <- dbConnect(RSQLite::SQLite(), ":memory:")
+copy_to(con, sales)
+copy_to(con, charts)
+
+#clean release dates as per previous post
+dbExecute(con, "
+UPDATE charts
+SET released = TRIM(SUBSTR(released, 1, INSTR(released, ' (')))
+WHERE INSTR(released, ' (')>0; 
+                          ")
+```
+
+# Extract data as df
+
+```{sql, connection = con, output.var = "df"}
+
+SELECT charts.artist, charts.title, SUBSTR(charts.released, -4) AS released, 
+  US_charts.chart_position AS US_position,
+  UK_charts.chart_position AS UK_position,
+  round(US_sales.sales/1000000, 1) AS US_sales, 
+  round(UK_sales.sales/1000000, 1) AS UK_sales, 
+  round(WW_sales.sales/1000000, 1) AS WW_sales, 
+  round((WW_sales.sales - US_sales.sales - UK_sales.sales)/1000000, 1) AS other_sales,
+  round(US_sales.sales/WW_sales.sales*100, 1) AS US_percent,
+  round(UK_sales.sales/WW_sales.sales*100, 1) AS UK_percent,
+  round((WW_sales.sales - US_sales.sales - UK_sales.sales)/WW_sales.sales*100, 1) AS other_percent
+FROM charts
+LEFT JOIN (SELECT artist, title, chart_position FROM charts WHERE chart = "US") AS US_charts
+ON charts.title = US_charts.title
+LEFT JOIN (SELECT artist, title, chart_position FROM charts WHERE chart = "UK") AS UK_charts
+ON charts.title = UK_charts.title
+LEFT JOIN sales
+ON charts.chart = sales.country and charts.title = sales.title
+LEFT JOIN (SELECT artist, title, sales FROM sales WHERE country = "US") AS US_sales
+  ON sales.title = US_sales.title
+LEFT JOIN (SELECT artist, title, sales FROM sales WHERE country = "UK") AS UK_sales
+  ON sales.title = UK_sales.title
+LEFT JOIN (SELECT artist, title, sales FROM sales WHERE country = "WW" OR country = "World") AS WW_sales
+  ON sales.title = WW_sales.title
+GROUP BY charts.artist, charts.title
+ORDER BY charts.artist DESC, released ASC;
+```
+
+## Formatting tables nicely in R Markdown
+
+How would we go about making a nice table for R Markdown reports. Lots of packages to try, arsenal, flextable, gt ... 
+
+Reviews and demonstrations of multiple packages available for producing tables in R can be found at:
+
+* David Keyes' summary of [How to make beautiful tables in R](https://rfortherestofus.com/2019/11/how-to-make-beautiful-tables-in-r/) offers short reviews and demonstrations of gt, kable and kableExtra, formattable, DT, reactable, flextable, huxtable, rhandsontable, and pixiedust
+
+* Pascal Schmidt's [How to easily create descriptive summary statistics tables in R studio - By group](https://thatdatatho.com/2018/08/20/easily-create-descriptive-summary-statistic-tables-r-studio/) reviews and demonstrates packages that are particularly useful for summary statistics tables that compare groups, including two of my favorites so far for this purpose, arsenal and tableone
+
+and ways to create highly customized and attractive summary tables include:
+
+
+GT documentation:
+https://blog.rstudio.com/2020/04/08/great-looking-tables-gt-0-2/
+
+
+add percent_US bars for sales (look at rule 10 in Thomas Mock blog?
+
+https://themockup.blog/posts/2020-09-04-10-table-rules-in-r/
+
+https://themockup.blog/posts/2020-10-31-embedding-custom-features-in-gt-tables/
+
+Okay, if you want to analyse sales by album, here's some industry-speak:
+
+https://chartmasters.org/2020/10/taylor-swift-albums-and-songs-sales/
+
+Obviously global sales totals for later albums will be less?
+
+Over 70% of sales from US - abroad improved with success of 1989 
+
+Reputation came out after streaming was inevitable and naturally sold less but high by today's standards ... 
+
+
+To do - make 0s and bars for 0/NA disappear?
+Change direction of caption
+Combine Title and YEAR, not artist!!!  
+Fix source note
+Fix color notes in function and code below 
+Fix alignment - all text centred vertically in preview below (not on website)
+Fix table width 
+
+Width is proportional to column title (Sales (%))
+
+```{r}
+
+df <- mutate(df, US_percent = ifelse(is.na(US_percent), 0, US_percent))
+
+# function to create bar chart
+# source: https://themockup.blog/posts/2020-10-31-embedding-custom-features-in-gt-tables/
+
+bar_chart <- function(value, color = "red"){
+  glue::glue("<span style=\"display: inline-block; direction: ltr; border-radius: 4px; padding-right: 2px; background-color: {color}; color: {color}; width: {value}%\"> &nbsp; </span>") %>% 
+    as.character() %>% 
+    gt::html()
+}
+
+
+# code for table
+
+df %>%
+  
+    filter(artist == "Taylor Swift") %>%
+    
+    mutate( 
+    # combine values from two columns into a single column
+    title_released = paste0("<span style='color:#795548'>**", title, "**</span>", 
+                            "<br><span style='color:#795548'>", released, "</span>"), 
+    
+    # add a column containing urls to album art
+    img = paste0("https://raw.githubusercontent.com/gkaramanis/tidytuesday/master/2020-week40/img/", 
+                title, ".jpg"),
+    
+    #create bar plot column calling function defined above
+    # source: https://themockup.blog/posts/2020-10-31-embedding-custom-features-in-gt-tables/
+    percent_plot = map(US_percent, ~bar_chart(value = .x, 
+                                              color = "#795548"))) %>% 
+
+    # arrange by release date
+    arrange(released) %>% 
+  
+    # select variables for inclusion in table
+    select(img, title_released, US_position, UK_position, 
+           WW_sales, US_sales, US_percent, percent_plot) %>%
+ 
+  # create a table using gt
+  gt() %>%
+  
+    # set column labels 
+    cols_label(
+      img = "",
+      title_released = html("<div style='text-align:left;'><span style='color:#795548'><b>Album</b><br>Released</span></div>"),
+      US_position = "US",
+      UK_position = "UK",
+      WW_sales = "World",
+      US_sales = "US",
+      # UK_sales = "UK",
+      # other_sales = "Other",
+      US_percent = "US", 
+      percent_plot = "US sales (%)") %>%
+      # UK_percent = "UK",
+      # other_percent = "Other") %>%
+  
+    # format title_artist column as markdown text
+    fmt_markdown(columns = c("title_released")) %>%
+  
+    # transform text in img column to display and appropriately size images
+    text_transform(
+      locations = cells_body(vars(img)),
+      fn = function(x){
+      web_image(url = x, height = 80)
+      }
+    ) %>%
+  
+    # transform NA values in all columns to "-"
+    text_transform(
+      locations = cells_body(columns = gt::everything()),
+      fn = function(x) {
+      str_replace(x, "NA", "–")
+      }
+    ) %>%
+  
+    
+    # transform NA values in all columns to "-"
+    text_transform(
+      locations = cells_body(columns = gt::everything()),
+      fn = function(x) {
+      str_replace(x, "0.0", "–")
+      }
+    ) %>%
+
+    # align cells containing numeric values right
+    cols_align(align = "right", columns = c("WW_sales", "US_sales", "US_percent")) %>%
+    cols_align(align = "center", columns = c("US_position", "UK_position")) %>% 
+    cols_align(align = "left", columns = c("percent_plot")) %>% 
+  
+    # vertically align text to centre
+    tab_style(
+      style = cell_text(v_align = "middle"), 
+        locations = cells_body()) %>%
+                
+    # create headings spanning multiple columns
+    tab_spanner(label = "Chart position", columns = vars(US_position, UK_position)) %>%
+    tab_spanner(label = "Sales ($ million)", columns = vars(WW_sales, US_sales)) %>%
+    tab_spanner(label = "Sales (%)", columns = vars(US_percent)) %>%
+  
+    # create title for table
+    tab_header(
+      title = md("**Taylor Swift's Speak Now sold primarily to US audiences, while the proportion of sales made in the US was lowest for Lover**")) %>%
+  
+    # create source note for table
+    tab_source_note("Source: Wikipedia, October 2020, Table: Modified from Georgios Karamanis") %>%
+  
+    # change column labels to uppercase - doesn't work in blogdown 
+    tab_options(
+      column_labels.text_transform = "uppercase",
+      table.font.color = "#795548"
+    )
+
+```
+
+
+    # size columns - not used
+    cols_width(
+    vars(title_artist) ~ px(150),
+    vars(released) ~ px(80),
+    vars(US_position) ~ px(35),
+    vars(UK_position) ~ px(35),
+    vars(WW_sales) ~ px(50),
+    vars(US_sales) ~ px(50),
+    vars(US_percent) ~ px(50)
+    ) %>%
+
+
+# A slightly more complex table
+
+One thing I've learned in my journey with R so far is that 'finishing that off' with 'just one more thing' can involve a considerable amount of work when you're teaching yourself as you go. I was keen, however, to summarize total US and worldwide sales for each artist, and calculate what percentage of each artist's total sales was represented by US sales. Thanks to [josep maria porrà](https://stackoverflow.com/questions/63041655/how-can-you-add-group-percentages-to-tables-using-the-gt-package) for an answer on stack overflow I was able to modify to create the below code:
+
+```{r}
+
+# [=====new code========]
+
+# create a new dataframe calculating US sales as a percentage of total sales for each artist 
+df_grouped <- df %>%
+  drop_na() %>%
+  group_by(artist) %>%
+  summarise_at(vars(US_sales, WW_sales), sum) %>%
+  rowwise() %>%
+  mutate(pct_US = US_sales/WW_sales)
+
+#[=======================]
+
+df %>%
+  
+  select(title, artist, year, US_chart, UK_chart, US_sales, WW_sales, 
+          US_percent) %>%
+  
+  # [======new code========]
+  
+  # drop albums for which full sales data are not available
+  drop_na() %>%
+  
+  #[======================]
+  
+  # create a table using gt, grouping by artist and using title for row name
+  gt(rowname_col = "title", groupname_col = "artist") %>%
+  
+    # set column labels 
+    cols_label(
+      year = "Released",
+      US_chart = "US",
+      UK_chart = "UK",
+      US_sales = "US",
+      WW_sales = "WW",
+      US_percent = "US sales (%)") %>%
+
+    tab_spanner(label = "Chart position", columns = vars(US_chart, 
+                                                         UK_chart)) %>%
+    tab_spanner(label = "Sales ($ million)", columns = vars(US_sales,
+                                                            WW_sales)) %>%
+
+    cols_align(align = "right", columns = c("US_chart", "UK_chart",
+                                            "US_sales", "WW_sales",
+                                            "US_percent")) %>%
+
+    # [======new code========]
+
+    # create title and subtitle for table, use md formatting
+    tab_header(
+      title = md("**Taylor Swift has higher sales than Beyoncé, but owes a greater proportion of her success to US sales than Beyoncé**"),
+      subtitle = md("*Peak chart position, sales, and US sales as a percentage of total sales by album*"))%>%
+  
+    # create summary rows for each group 
+    summary_rows(groups = TRUE, 
+                 columns = vars(US_sales, WW_sales),
+                 fns = list(TOTAL = "sum"),
+                 formatter = fmt_number, decimals = 1) %>%
+    summary_rows(groups = "Taylor Swift",
+                 columns = vars(US_percent), 
+                 fns = list(TOTAL = ~ 
+                            df_grouped %>%
+                            filter(artist == "Taylor Swift") %>%
+                            select(pct_US) %>%
+                            pull()),
+                 formatter = fmt_percent, decimals = 1) %>%
+    summary_rows(groups = "Beyoncé",
+                 columns = vars(US_percent), 
+                 fns = list(TOTAL = ~ 
+                            df_grouped %>%
+                            filter(artist == "Beyoncé") %>%
+                            select(pct_US) %>%
+                            pull()),
+                 formatter = fmt_percent, decimals = 1) %>%
+
+    # add footnote
+    tab_footnote(
+      "Excludes 3 albums for which worldwide sales data was not available - Taylor Swift, Folklore, and 4",
+      locations = cells_title("subtitle")) %>%
+  
+    # create source note for table
+    tab_source_note("Source: Billboard") 
+
+```
+
+
+# A simpler table example
+
+Add average rows for each artist, 
+
+
+```{r}
+df %>%
+  
+  # create a table using gt, grouping by artist and using title_artist for column names
+  gt(rowname_col = "title", groupname_col = "artist") %>%
+  
+    # set column labels 
+    cols_label(
+      US_position = "US",
+      UK_position = "UK",
+      US_sales = "US",
+      # UK_sales = "UK",
+      WW_sales = "Worldwide",
+      # other_sales = "Other",
+      US_percent = "US") %>%
+      # UK_percent = "UK",
+      # other_percent = "Other") %>%
+  
+   # transform NA values in all columns to "-"
+    text_transform(
+      locations = cells_body(columns = gt::everything()),
+      fn = function(x) {
+      str_replace(x, "NA", "–")
+      }
+    ) %>%
+  
+    # create headings spanning multiple columns
+    tab_spanner(label = "Chart position", columns = vars(US_position, UK_position)) %>%
+    tab_spanner(label = "Sales (millions)", columns = vars(WW_sales, US_sales)) %>%
+    tab_spanner(label = "Sales (percent)", columns = vars(US_percent)) %>%
+  
+    # create title for table
+    tab_header(
+      title = md("Taylor Swift and Beyoncé"))
+
+```
+
+# Finally, remember to disconnect
+
+Usual PSA about disconnecting from the database at the end of each session.
+
+```{r}
+dbDisconnect(con)
+```
+
