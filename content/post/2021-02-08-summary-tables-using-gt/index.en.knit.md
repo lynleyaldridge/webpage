@@ -22,7 +22,7 @@ image:
 projects: []
 ---
 
-This post shows how I experimented with more complex features of gt, to create a summary table using the Taylor Swift and Beyoncé Tidy Tuesday data, and drawing on an example 
+This post shows how I experimented with more complex features of gt, to create various summary tables using the Taylor Swift and Beyoncé Tidy Tuesday data. 
 
 ## Setup
 
@@ -136,6 +136,10 @@ Fix table width
 
 Width is proportional to column title (Sales (%))
 
+# Adding images and formatting
+
+# Adding percentage bars
+
 
 ```r
 df <- mutate(df, US_percent = ifelse(is.na(US_percent), 0, US_percent))
@@ -223,7 +227,7 @@ df %>%
       }
     ) %>%
 
-    # align cells containing numeric values right
+    # align cells containing numeric values right - sometimes doesn't work
     cols_align(align = "right", columns = c("WW_sales", "US_sales", "US_percent")) %>%
     cols_align(align = "center", columns = c("US_position", "UK_position")) %>% 
     cols_align(align = "left", columns = c("percent_plot")) %>% 
@@ -243,7 +247,7 @@ df %>%
       title = md("**Taylor Swift's Speak Now sold primarily to US audiences, while the proportion of sales made in the US was lowest for Lover**")) %>%
   
     # create source note for table
-    tab_source_note("Source: Wikipedia, October 2020, Table: Modified from Georgios Karamanis") %>%
+    tab_source_note("Source: Billboard, October 2020, Table: Modified from Georgios Karamanis") %>%
   
     # change column labels to uppercase - doesn't work in blogdown 
     tab_options(
@@ -256,7 +260,7 @@ df %>%
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#lqzwzzdfbt .gt_table {
+#hpoijniarl .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -281,7 +285,7 @@ df %>%
   border-left-color: #D3D3D3;
 }
 
-#lqzwzzdfbt .gt_heading {
+#hpoijniarl .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -293,7 +297,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#lqzwzzdfbt .gt_title {
+#hpoijniarl .gt_title {
   color: #795548;
   font-size: 125%;
   font-weight: initial;
@@ -303,7 +307,7 @@ df %>%
   border-bottom-width: 0;
 }
 
-#lqzwzzdfbt .gt_subtitle {
+#hpoijniarl .gt_subtitle {
   color: #795548;
   font-size: 85%;
   font-weight: initial;
@@ -313,13 +317,13 @@ df %>%
   border-top-width: 0;
 }
 
-#lqzwzzdfbt .gt_bottom_border {
+#hpoijniarl .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#lqzwzzdfbt .gt_col_headings {
+#hpoijniarl .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -334,7 +338,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#lqzwzzdfbt .gt_col_heading {
+#hpoijniarl .gt_col_heading {
   color: #795548;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -354,7 +358,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#lqzwzzdfbt .gt_column_spanner_outer {
+#hpoijniarl .gt_column_spanner_outer {
   color: #795548;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -366,15 +370,15 @@ df %>%
   padding-right: 4px;
 }
 
-#lqzwzzdfbt .gt_column_spanner_outer:first-child {
+#hpoijniarl .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#lqzwzzdfbt .gt_column_spanner_outer:last-child {
+#hpoijniarl .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#lqzwzzdfbt .gt_column_spanner {
+#hpoijniarl .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -386,7 +390,7 @@ df %>%
   width: 100%;
 }
 
-#lqzwzzdfbt .gt_group_heading {
+#hpoijniarl .gt_group_heading {
   padding: 8px;
   color: #795548;
   background-color: #FFFFFF;
@@ -408,7 +412,7 @@ df %>%
   vertical-align: middle;
 }
 
-#lqzwzzdfbt .gt_empty_group_heading {
+#hpoijniarl .gt_empty_group_heading {
   padding: 0.5px;
   color: #795548;
   background-color: #FFFFFF;
@@ -423,15 +427,15 @@ df %>%
   vertical-align: middle;
 }
 
-#lqzwzzdfbt .gt_from_md > :first-child {
+#hpoijniarl .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#lqzwzzdfbt .gt_from_md > :last-child {
+#hpoijniarl .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#lqzwzzdfbt .gt_row {
+#hpoijniarl .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -450,7 +454,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#lqzwzzdfbt .gt_stub {
+#hpoijniarl .gt_stub {
   color: #795548;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -462,7 +466,7 @@ df %>%
   padding-left: 12px;
 }
 
-#lqzwzzdfbt .gt_summary_row {
+#hpoijniarl .gt_summary_row {
   color: #795548;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -472,7 +476,7 @@ df %>%
   padding-right: 5px;
 }
 
-#lqzwzzdfbt .gt_first_summary_row {
+#hpoijniarl .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -482,7 +486,7 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#lqzwzzdfbt .gt_grand_summary_row {
+#hpoijniarl .gt_grand_summary_row {
   color: #795548;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -492,7 +496,7 @@ df %>%
   padding-right: 5px;
 }
 
-#lqzwzzdfbt .gt_first_grand_summary_row {
+#hpoijniarl .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -502,11 +506,11 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#lqzwzzdfbt .gt_striped {
+#hpoijniarl .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#lqzwzzdfbt .gt_table_body {
+#hpoijniarl .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -515,7 +519,7 @@ df %>%
   border-bottom-color: #D3D3D3;
 }
 
-#lqzwzzdfbt .gt_footnotes {
+#hpoijniarl .gt_footnotes {
   color: #795548;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -529,13 +533,13 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#lqzwzzdfbt .gt_footnote {
+#hpoijniarl .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#lqzwzzdfbt .gt_sourcenotes {
+#hpoijniarl .gt_sourcenotes {
   color: #795548;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -549,46 +553,46 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#lqzwzzdfbt .gt_sourcenote {
+#hpoijniarl .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#lqzwzzdfbt .gt_left {
+#hpoijniarl .gt_left {
   text-align: left;
 }
 
-#lqzwzzdfbt .gt_center {
+#hpoijniarl .gt_center {
   text-align: center;
 }
 
-#lqzwzzdfbt .gt_right {
+#hpoijniarl .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#lqzwzzdfbt .gt_font_normal {
+#hpoijniarl .gt_font_normal {
   font-weight: normal;
 }
 
-#lqzwzzdfbt .gt_font_bold {
+#hpoijniarl .gt_font_bold {
   font-weight: bold;
 }
 
-#lqzwzzdfbt .gt_font_italic {
+#hpoijniarl .gt_font_italic {
   font-style: italic;
 }
 
-#lqzwzzdfbt .gt_super {
+#hpoijniarl .gt_super {
   font-size: 65%;
 }
 
-#lqzwzzdfbt .gt_footnote_marks {
+#hpoijniarl .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
-<div id="lqzwzzdfbt" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+<div id="hpoijniarl" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
   <thead class="gt_header">
     <tr>
       <th colspan="8" class="gt_heading gt_title gt_font_normal" style><strong>Taylor Swift's Speak Now sold primarily to US audiences, while the proportion of sales made in the US was lowest for Lover</strong></th>
@@ -712,7 +716,7 @@ df %>%
   </tbody>
   <tfoot class="gt_sourcenotes">
     <tr>
-      <td class="gt_sourcenote" colspan="8">Source: Wikipedia, October 2020, Table: Modified from Georgios Karamanis</td>
+      <td class="gt_sourcenote" colspan="8">Source: Billboard, October 2020, Table: Modified from Georgios Karamanis</td>
     </tr>
   </tfoot>
   
@@ -731,7 +735,7 @@ df %>%
     ) %>%
 
 
-# A slightly more complex table
+# Adding summary rows with more complex calculations
 
 One thing I've learned in my journey with R so far is that 'finishing that off' with 'just one more thing' can involve a considerable amount of work when you're teaching yourself as you go. I was keen, however, to summarize total US and worldwide sales for each artist, and calculate what percentage of each artist's total sales was represented by US sales. Thanks to [josep maria porrà](https://stackoverflow.com/questions/63041655/how-can-you-add-group-percentages-to-tables-using-the-gt-package) for an answer on stack overflow I was able to modify to create the below code:
 

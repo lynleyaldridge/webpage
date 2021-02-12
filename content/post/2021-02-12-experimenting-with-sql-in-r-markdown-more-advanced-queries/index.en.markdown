@@ -2,16 +2,15 @@
 title: 'More experimenting with SQL in R Markdown: Pivoting data, outputting results
   to R, and creating a summary table using gt'
 author: Lynley Aldridge
-date: '2021-02-08'
+date: '2021-02-12'
 tags:
   - gt
   - Rstats
   - SQL
   - TidyTuesday
   - Tutorial
-draft: yes
 slug: experimenting-with-sql-in-r-markdown-more-join-queries
-lastmod: '2021-02-08T20:01:24+11:00'
+lastmod: '2021-02-12T20:01:24+11:00'
 featured: no
 image:
   caption: ''
@@ -23,7 +22,7 @@ Following on from my [previous post](/2021/01/13/experimenting-with-sql/), I use
 
 # Setup
 
-As in the previous post, load packages, read in data, set-up a connection to the database and copy in the data, and clean release dates:
+As in the previous post, load packages, read in data, set up a connection to the database and copy in the data, and clean release dates:
 
 
 ```r
@@ -57,7 +56,7 @@ WHERE INSTR(released, ' (')>0;
 
 # Previewing tables using SELECT and LIMIT queries 
 
-Let's quickly refresh our understanding of how this data is structured (focusing only on columns relevant for this tutorial). 
+Let's quickly refresh our understanding of how this data is structured (focusing only on columns relevant for this tutorial): 
 
 
 ```r
@@ -103,7 +102,7 @@ The task I set myself at the end of the last post was to join and pivot this dat
 
 This process will be easier to follow if the underlying data are normalized. This is also best practice for any database working with relational data, and involves minimizing redundancies in data storage and ensuring each table serves only a single purpose. In this case, we should create a separate albums table to record the details of each album (i.e., artist, title and release dates), so edits and additions to this information need only be made in one place. We then give each album a unique ID (a primary key) that can be used to reference this album in the charts and sales tables. 
 
-First, let's create the new albums table, adding an `id` field to this table to store a unique id number for each distinct album.
+First, let's create the new `albums` table, adding an `id` field to this table (as a primary key) to store a unique id number for each distinct album:
 
 
 ```r
@@ -121,7 +120,7 @@ CREATE TABLE albums
 ## [1] 0
 ```
 
-We now populate this table with the unique albums found in the charts table (we could just as easily have done this from the sales table).
+We now populate this table with the unique albums found in the `charts` table (we could just as easily have done this from the sales table):
 
 
 ```r
@@ -155,14 +154,40 @@ LIMIT 5
 ## 5  5 Taylor Swift         1989  October 27, 2014
 ```
 
-Our next goal is to amend the charts and sales tables to reference albums by using their unique id number, rather than their title. The id column is created as a primary key in the albums table, and as a foreign key in the charts and sales tables (where it serves to point back to the album details stored in the albums table). (For example, we will use `FK_Sales_Albums` instead of album title in the `Sales` table to reference albums whose details are stored in the `Albums` table).
-
-Here we create the new sales table (`sales_new`): 
+Let's rename the original `sales` table to `sales_original`, so we can create a new `sales` table in which albums are referenced by using their unique id number, rather than their title. 
 
 
 ```r
 dbExecute(con, "
-CREATE TABLE sales_new
+ALTER TABLE sales
+  RENAME TO sales_original;
+                          ")
+```
+
+```
+## [1] 0
+```
+
+To check that we've renamed the table correctly, let's list the tables accessible via the connection we defined in the setup phase: 
+
+
+```r
+dbListTables(con)
+```
+
+```
+## [1] "albums"         "charts"         "sales_original" "sqlite_stat1"  
+## [5] "sqlite_stat4"
+```
+
+We see here that `sales` has been renamed to `sales_original`, freeing us to create our new and improved `sales` table. (Note that the `sqlite_stat1` and `sqlite_stat4` tables are internal tables created to record the presence of keys and indexes in our database, to optimize database performance.)
+
+Recall that we created an `id` column as a primary key in the `albums` table. We are now going to create a column for these unique id numbers as a foreign key (`FK_Sales_Albums`) in our replacement `sales` table (where these id numbers will be used to point back to the album details stored in the `albums` table): 
+
+
+```r
+dbExecute(con, "
+CREATE TABLE sales
   (id INTEGER NOT NULL PRIMARY KEY,
   FK_Sales_Albums,
   country,
@@ -175,15 +200,15 @@ CREATE TABLE sales_new
 ## [1] 0
 ```
 
-Next we need to extract records to add to this table. First, let's design and test our query and check that it works as intended. We want to join the albums table to the sales tables by matching on `Albums.title = sales.title`, and extract sales by country details for each album with the correct id attached. So we select the id field from the albums table (`Albums.id`) and label this as our foreign key (`AS FK_Sales_Albums`). To complete our query, we also select the country and sales fields from the sales table: 
+Next, we need to extract records to add to this table. First, let's design and test our query and check that it works as intended. We want to join the `albums` table to the `sales_original` table by matching on `albums.title = sales_original.title`, and extract sales by country details for each album with the correct id attached. So we select the id field from the albums table (`albums.id`) and label this as our foreign key (`AS FK_Sales_Albums`). To complete our query, we also select the country and sales fields from the original sales table: 
 
 
 ```r
 dbGetQuery(con, '
-SELECT Albums.id AS FK_Sales_Albums, sales.country, sales.sales 
-FROM sales
+SELECT albums.id AS FK_Sales_Albums, sales_original.country, sales_original.sales 
+FROM sales_original
 LEFT JOIN albums
-ON Albums.title = sales.title
+ON albums.title = sales_original.title
 LIMIT 5
                           ')
 ```
@@ -197,16 +222,16 @@ LIMIT 5
 ## 5               2      UK   609000
 ```
 
-This process of drafting queries, verifying results, and then executing updates is one that works well when designing multi-stage queries. Let's now combine our JOIN query with an INSERT INTO query, to populate the `sales_new` table:
+This process of drafting queries, verifying results, and then executing updates is one that works well when designing multi-stage queries. Let's now combine our JOIN query with an INSERT INTO query, to populate the replacement `sales` table:
 
 
 ```r
 dbExecute(con, "
-INSERT INTO sales_new (FK_Sales_Albums, country, sales)
-  SELECT Albums.id AS FK_Sales_Albums, sales.country, sales.sales 
-  FROM sales
+INSERT INTO sales (FK_Sales_Albums, country, sales)
+  SELECT albums.id AS FK_Sales_Albums, sales_original.country, sales_original.sales 
+  FROM sales_original
   LEFT JOIN albums
-  ON Albums.title = sales.title;
+  ON albums.title = sales_original.title;
                             ")
 ```
 
@@ -214,12 +239,26 @@ INSERT INTO sales_new (FK_Sales_Albums, country, sales)
 ## [1] 48
 ```
 
-We can repeat the same process with the charts data. First, create the structure of `charts_new`:
+We can repeat the same process with the charts data. First, rename the original `charts` table to `charts_original`:
 
 
 ```r
 dbExecute(con, "
-CREATE TABLE charts_new
+ALTER TABLE charts
+  RENAME TO charts_original;
+                          ")
+```
+
+```
+## [1] 0
+```
+
+Next, create the structure of the new and improved `charts` table:
+
+
+```r
+dbExecute(con, "
+CREATE TABLE charts
   (id INTEGER NOT NULL PRIMARY KEY,
   FK_Charts_Albums,
   chart,
@@ -232,15 +271,15 @@ CREATE TABLE charts_new
 ## [1] 0
 ```
 
-Next, draft and test a query extracting peak chart positions for each album by album id.
+Next, draft and test a query extracting peak chart positions for each album by album id (from the original charts table):
 
 
 ```r
 dbGetQuery(con, '
-SELECT Albums.id AS FK_Charts_Albums, charts.chart, charts.chart_position 
-FROM charts
+SELECT albums.id AS FK_Charts_Albums, charts_original.chart, charts_original.chart_position 
+FROM charts_original
 LEFT JOIN albums
-ON Albums.title = charts.title
+ON albums.title = charts_original.title
 LIMIT 5
                           ')
 ```
@@ -259,11 +298,11 @@ Now, combine this JOIN query with an INSERT INTO query and execute, to insert da
 
 ```r
 dbExecute(con, "
-INSERT INTO charts_new (FK_Charts_Albums, chart, chart_position)
-  SELECT Albums.id AS FK_Charts_Albums, charts.chart, charts.chart_position 
-  FROM charts
+INSERT INTO charts (FK_Charts_Albums, chart, chart_position)
+  SELECT albums.id AS FK_Charts_Albums, charts_original.chart, charts_original.chart_position 
+  FROM charts_original
   LEFT JOIN albums
-  ON Albums.title = charts.title;
+  ON albums.title = charts_original.title;
                             ")
 ```
 
@@ -275,13 +314,13 @@ INSERT INTO charts_new (FK_Charts_Albums, chart, chart_position)
 
 To pivot data so that sales data for each country is presented in a new column (using RSQLite), we can use a series of JOIN ... ON statements.
 
-The following code, for example, creates a temporary table called `US_charts` which joins rows from the `charts_new` table where `chart = "US"` with matching album ids. 
+The following code excerpt (see full context below) creates a temporary table called `US_charts` which selects rows from the `charts` table where `chart = "US"` (for matching album IDs):
 
 
 ```r
-`LEFT JOIN charts_new AS US_charts 
+  LEFT JOIN charts AS US_charts 
   ON US_charts.FK_Charts_Albums = albums.id 
-  AND US_charts.chart = "US"`
+  AND US_charts.chart = "US"
 ```
 
 This temporary table can then be referenced in the SELECT statement at the beginning of the query, which specifies we want to extract `US_charts.chart_position AS US_chart`.  
@@ -302,15 +341,15 @@ SELECT albums.artist, albums.title, SUBSTR(albums.released, -4) AS year,
   WW_sales.sales AS WW_sales,  
   round(US_sales.sales/WW_sales.sales*100, 1) AS US_percent
 FROM albums
-LEFT JOIN charts_new AS US_charts
+LEFT JOIN charts AS US_charts
   ON US_charts.FK_Charts_Albums = albums.id 
   AND US_charts.chart = "US"
-LEFT JOIN sales_new AS US_sales
+LEFT JOIN sales AS US_sales
   ON US_sales.FK_Sales_Albums = albums.id 
   AND US_sales.country = "US"
-LEFT JOIN sales_new AS WW_sales
+LEFT JOIN sales AS WW_sales
   ON WW_sales.FK_Sales_Albums = albums.id 
-  AND (WW_sales.country = "WW" OR WW_sales.country = "World")
+  AND (WW_sales.country IN ("WW", "World"))
                           ')
 ```
 
@@ -332,11 +371,39 @@ LEFT JOIN sales_new AS WW_sales
 ## 14      Beyoncé             Lemonade 2016        1  1554000  2500000       62.2
 ```
 
+## One more SQL trick: UPDATE query using CASE WHEN statements
+
+While writing the query above, I realized that the country codes in the sales table aren't consistent, with worldwide sales sometimes being abbreviated as "WW" and sometimes as "World". The country codes in this table also aren't consistent with those used in `ggflags`, which may become an issue when we use `ggplot2` and `ggflags` to graph data by country. 
+
+So let's update multiple country codes in the `sales` table, using an UPDATE query and a series of CASE WHEN statements:
+
+
+```r
+dbExecute(con, "
+UPDATE sales
+SET country = CASE WHEN country = 'World' THEN 'WW'
+                    WHEN country = 'WW' THEN 'WW'
+                    WHEN country = 'AUS' THEN 'AU'
+                    WHEN country = 'JPN' THEN 'JP'
+                    WHEN country = 'UK' THEN 'GB'
+                    WHEN country = 'CAN' THEN 'CA'
+                    WHEN country = 'FRA' THEN 'FR'
+                    WHEN country = 'FR' THEN 'FR'
+                    WHEN country = 'US' THEN 'US'
+                    WHEN country = 'NA' THEN 'NA'
+                    END;
+                          ")
+```
+
+```
+## [1] 48
+```
+
 ## Using SQL directly in R Markdown code chunks, and outputting for manipulation in R
 
-What if I now want to output this data to R to use in a prettily formatted table or figure in an R Markdown report?  In the following code chunk, I draw on [Andrew Couch's tutorial](https://www.youtube.com/watch?v=zAgTlZUugUE) again, to write SQL code directly into the R Markdown code chunk (by replacing the `{R}` prefix with the following `{sql, connection = con, output.var = "df"}`. The first part of this statement tells R Markdown that the chunk uses SQL code and specifies the connection to access the database. The second part of the statement (`output.var = "df"`) is used to save output as a dataframe named df.
+What if I now want to output this data to R to create a prettily formatted table or figure (e.g., in an R Markdown report or in a blogdown post like this one)?  In the following code chunk, I draw on [Andrew Couch's tutorial](https://www.youtube.com/watch?v=zAgTlZUugUE) again, to write SQL code directly into the R Markdown code chunk (by replacing the `{R}` prefix with the following `{sql, connection = con, output.var = "df"}`). The first part of this statement tells R Markdown that the chunk uses SQL code and specifies the connection to access the database. The second part of the statement (`output.var = "df"`) is used to save output as a dataframe named df.
 
-The query below uses the same statements as the example above, but captures UK and US chart data, US and WW sales data, and adds a new column (`other_sales`) calculating sales in countries other than the US. For ease of presentation, sales figures are now calculated in millions.  
+The query below uses the same statements as the example above, but captures UK and US chart data, US and WW sales data (now with consistent use of "WW" for worldwide sales), and adds a new column (`other_sales`) calculating sales in countries other than the US. For ease of presentation, sales figures are now calculated in millions:
 
 
 ```sql
@@ -350,18 +417,18 @@ SELECT albums.artist, albums.title, SUBSTR(albums.released, -4) AS year,
   round(US_sales.sales/WW_sales.sales*100, 1) AS US_percent,
   round((WW_sales.sales - US_sales.sales)/WW_sales.sales*100, 1) AS other_percent
 FROM albums
-LEFT JOIN charts_new AS US_charts
+LEFT JOIN charts AS US_charts
   ON US_charts.FK_Charts_Albums = albums.id 
   AND US_charts.chart = "US"
-LEFT JOIN charts_new AS UK_charts
+LEFT JOIN charts AS UK_charts
   ON UK_charts.FK_Charts_Albums = albums.id 
   AND UK_charts.chart = "UK"
-LEFT JOIN sales_new AS US_sales
+LEFT JOIN sales AS US_sales
   ON US_sales.FK_Sales_Albums = albums.id 
   AND US_sales.country = "US"
-LEFT JOIN sales_new AS WW_sales
+LEFT JOIN sales AS WW_sales
   ON WW_sales.FK_Sales_Albums = albums.id 
-  AND (WW_sales.country = "WW" OR WW_sales.country = "World");
+  AND (WW_sales.country = "WW");
 ```
 
 Let's look at the output:
@@ -461,7 +528,7 @@ df %>%
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#nkybvopvnn .gt_table {
+#tmjnekeeqv .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -486,7 +553,7 @@ df %>%
   border-left-color: #D3D3D3;
 }
 
-#nkybvopvnn .gt_heading {
+#tmjnekeeqv .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -498,7 +565,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#nkybvopvnn .gt_title {
+#tmjnekeeqv .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -508,7 +575,7 @@ df %>%
   border-bottom-width: 0;
 }
 
-#nkybvopvnn .gt_subtitle {
+#tmjnekeeqv .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -518,13 +585,13 @@ df %>%
   border-top-width: 0;
 }
 
-#nkybvopvnn .gt_bottom_border {
+#tmjnekeeqv .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#nkybvopvnn .gt_col_headings {
+#tmjnekeeqv .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -539,7 +606,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#nkybvopvnn .gt_col_heading {
+#tmjnekeeqv .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -559,7 +626,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#nkybvopvnn .gt_column_spanner_outer {
+#tmjnekeeqv .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -571,15 +638,15 @@ df %>%
   padding-right: 4px;
 }
 
-#nkybvopvnn .gt_column_spanner_outer:first-child {
+#tmjnekeeqv .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#nkybvopvnn .gt_column_spanner_outer:last-child {
+#tmjnekeeqv .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#nkybvopvnn .gt_column_spanner {
+#tmjnekeeqv .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -591,7 +658,7 @@ df %>%
   width: 100%;
 }
 
-#nkybvopvnn .gt_group_heading {
+#tmjnekeeqv .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -613,7 +680,7 @@ df %>%
   vertical-align: middle;
 }
 
-#nkybvopvnn .gt_empty_group_heading {
+#tmjnekeeqv .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -628,15 +695,15 @@ df %>%
   vertical-align: middle;
 }
 
-#nkybvopvnn .gt_from_md > :first-child {
+#tmjnekeeqv .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#nkybvopvnn .gt_from_md > :last-child {
+#tmjnekeeqv .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#nkybvopvnn .gt_row {
+#tmjnekeeqv .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -655,7 +722,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#nkybvopvnn .gt_stub {
+#tmjnekeeqv .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -667,7 +734,7 @@ df %>%
   padding-left: 12px;
 }
 
-#nkybvopvnn .gt_summary_row {
+#tmjnekeeqv .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -677,7 +744,7 @@ df %>%
   padding-right: 5px;
 }
 
-#nkybvopvnn .gt_first_summary_row {
+#tmjnekeeqv .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -687,7 +754,7 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#nkybvopvnn .gt_grand_summary_row {
+#tmjnekeeqv .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -697,7 +764,7 @@ df %>%
   padding-right: 5px;
 }
 
-#nkybvopvnn .gt_first_grand_summary_row {
+#tmjnekeeqv .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -707,11 +774,11 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#nkybvopvnn .gt_striped {
+#tmjnekeeqv .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#nkybvopvnn .gt_table_body {
+#tmjnekeeqv .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -720,7 +787,7 @@ df %>%
   border-bottom-color: #D3D3D3;
 }
 
-#nkybvopvnn .gt_footnotes {
+#tmjnekeeqv .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -734,13 +801,13 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#nkybvopvnn .gt_footnote {
+#tmjnekeeqv .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#nkybvopvnn .gt_sourcenotes {
+#tmjnekeeqv .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -754,46 +821,46 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#nkybvopvnn .gt_sourcenote {
+#tmjnekeeqv .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#nkybvopvnn .gt_left {
+#tmjnekeeqv .gt_left {
   text-align: left;
 }
 
-#nkybvopvnn .gt_center {
+#tmjnekeeqv .gt_center {
   text-align: center;
 }
 
-#nkybvopvnn .gt_right {
+#tmjnekeeqv .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#nkybvopvnn .gt_font_normal {
+#tmjnekeeqv .gt_font_normal {
   font-weight: normal;
 }
 
-#nkybvopvnn .gt_font_bold {
+#tmjnekeeqv .gt_font_bold {
   font-weight: bold;
 }
 
-#nkybvopvnn .gt_font_italic {
+#tmjnekeeqv .gt_font_italic {
   font-style: italic;
 }
 
-#nkybvopvnn .gt_super {
+#tmjnekeeqv .gt_super {
   font-size: 65%;
 }
 
-#nkybvopvnn .gt_footnote_marks {
+#tmjnekeeqv .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
-<div id="nkybvopvnn" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+<div id="tmjnekeeqv" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
   <thead class="gt_header">
     <tr>
       <th colspan="7" class="gt_heading gt_title gt_font_normal" style><strong>Taylor Swift has higher US and Total sales than Beyoncé, but Beyoncé's international sales are higher</strong></th>
@@ -980,34 +1047,6 @@ df %>%
   </tfoot>
   
 </table></div><!--/html_preserve-->
-
-## One more SQL trick: UPDATE query using CASE WHEN statements
-
-In upcoming blog posts, I plan to further refine this summary table using the `gt` package, and to use `ggplot2` and `ggflags` to graph data by country. But first, we need to update country codes in our data to be consistent with those used in `ggflags`.
-
-Last time we worked with this data, we updated the country field to use 'WW' consistently to reflect worldwide sales. Let's update multiple country codes from `sales_new` at once, using an UPDATE query and a series of CASE WHEN statements:
-
-
-```r
-dbExecute(con, "
-UPDATE sales_new
-SET country = CASE WHEN country = 'World' THEN 'WW'
-                    WHEN country = 'WW' THEN 'WW'
-                    WHEN country = 'AUS' THEN 'AU'
-                    WHEN country = 'JPN' THEN 'JP'
-                    WHEN country = 'UK' THEN 'GB'
-                    WHEN country = 'CAN' THEN 'CA'
-                    WHEN country = 'FRA' THEN 'FR'
-                    WHEN country = 'FR' THEN 'FR'
-                    WHEN country = 'US' THEN 'US'
-                    WHEN country = 'NA' THEN 'NA'
-                    END;
-                          ")
-```
-
-```
-## [1] 48
-```
 
 ## Next steps
 

@@ -22,7 +22,7 @@ image:
 projects: []
 ---
 
-This post shows how I experimented with more complex features of gt, to create a summary table using the Taylor Swift and Beyoncé Tidy Tuesday data, and drawing on an example 
+This post shows how I experimented with more complex features of gt, to create various summary tables using the Taylor Swift and Beyoncé Tidy Tuesday data. 
 
 ## Setup
 
@@ -131,6 +131,10 @@ Fix table width
 
 Width is proportional to column title (Sales (%))
 
+# Adding images and formatting
+
+# Adding percentage bars
+
 ```{r}
 
 df <- mutate(df, US_percent = ifelse(is.na(US_percent), 0, US_percent))
@@ -218,7 +222,7 @@ df %>%
       }
     ) %>%
 
-    # align cells containing numeric values right
+    # align cells containing numeric values right - sometimes doesn't work
     cols_align(align = "right", columns = c("WW_sales", "US_sales", "US_percent")) %>%
     cols_align(align = "center", columns = c("US_position", "UK_position")) %>% 
     cols_align(align = "left", columns = c("percent_plot")) %>% 
@@ -238,7 +242,7 @@ df %>%
       title = md("**Taylor Swift's Speak Now sold primarily to US audiences, while the proportion of sales made in the US was lowest for Lover**")) %>%
   
     # create source note for table
-    tab_source_note("Source: Wikipedia, October 2020, Table: Modified from Georgios Karamanis") %>%
+    tab_source_note("Source: Billboard, October 2020, Table: Modified from Georgios Karamanis") %>%
   
     # change column labels to uppercase - doesn't work in blogdown 
     tab_options(
@@ -261,7 +265,7 @@ df %>%
     ) %>%
 
 
-# A slightly more complex table
+# Adding summary rows with more complex calculations
 
 One thing I've learned in my journey with R so far is that 'finishing that off' with 'just one more thing' can involve a considerable amount of work when you're teaching yourself as you go. I was keen, however, to summarize total US and worldwide sales for each artist, and calculate what percentage of each artist's total sales was represented by US sales. Thanks to [josep maria porrà](https://stackoverflow.com/questions/63041655/how-can-you-add-group-percentages-to-tables-using-the-gt-package) for an answer on stack overflow I was able to modify to create the below code:
 
