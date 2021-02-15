@@ -459,7 +459,7 @@ head(df)
 
 There are a plethora of packages capable of creating high quality tables using R Markdown and blogdown. Some resources for exploring these options can be found on my [resources](/../../../../resources) page. As the purpose of this particular blog post is primarily to explore the use of SQL, I've made a relatively simple table here. In creating this table (using gt as shown below) I drew on:
 
-* [the package documentation for gt](https://blog.rstudio.com/2020/04/08/great-looking-tables-gt-0-2/) 
+* [a blogpost introducing the gt package and its capabilities](https://blog.rstudio.com/2020/04/08/great-looking-tables-gt-0-2/) 
 
 * specific instructions for [creating summary lines](https://gt.rstudio.com/articles/creating-summary-lines.html) in gt
 
@@ -528,7 +528,7 @@ df %>%
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#tmjnekeeqv .gt_table {
+#fwaofnxljw .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -553,7 +553,7 @@ df %>%
   border-left-color: #D3D3D3;
 }
 
-#tmjnekeeqv .gt_heading {
+#fwaofnxljw .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -565,7 +565,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#tmjnekeeqv .gt_title {
+#fwaofnxljw .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -575,7 +575,7 @@ df %>%
   border-bottom-width: 0;
 }
 
-#tmjnekeeqv .gt_subtitle {
+#fwaofnxljw .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -585,13 +585,13 @@ df %>%
   border-top-width: 0;
 }
 
-#tmjnekeeqv .gt_bottom_border {
+#fwaofnxljw .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#tmjnekeeqv .gt_col_headings {
+#fwaofnxljw .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -606,7 +606,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#tmjnekeeqv .gt_col_heading {
+#fwaofnxljw .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -626,7 +626,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#tmjnekeeqv .gt_column_spanner_outer {
+#fwaofnxljw .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -638,15 +638,15 @@ df %>%
   padding-right: 4px;
 }
 
-#tmjnekeeqv .gt_column_spanner_outer:first-child {
+#fwaofnxljw .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#tmjnekeeqv .gt_column_spanner_outer:last-child {
+#fwaofnxljw .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#tmjnekeeqv .gt_column_spanner {
+#fwaofnxljw .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -658,7 +658,7 @@ df %>%
   width: 100%;
 }
 
-#tmjnekeeqv .gt_group_heading {
+#fwaofnxljw .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -680,7 +680,7 @@ df %>%
   vertical-align: middle;
 }
 
-#tmjnekeeqv .gt_empty_group_heading {
+#fwaofnxljw .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -695,15 +695,15 @@ df %>%
   vertical-align: middle;
 }
 
-#tmjnekeeqv .gt_from_md > :first-child {
+#fwaofnxljw .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#tmjnekeeqv .gt_from_md > :last-child {
+#fwaofnxljw .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#tmjnekeeqv .gt_row {
+#fwaofnxljw .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -722,7 +722,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#tmjnekeeqv .gt_stub {
+#fwaofnxljw .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -734,7 +734,7 @@ df %>%
   padding-left: 12px;
 }
 
-#tmjnekeeqv .gt_summary_row {
+#fwaofnxljw .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -744,7 +744,7 @@ df %>%
   padding-right: 5px;
 }
 
-#tmjnekeeqv .gt_first_summary_row {
+#fwaofnxljw .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -754,7 +754,7 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#tmjnekeeqv .gt_grand_summary_row {
+#fwaofnxljw .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -764,7 +764,7 @@ df %>%
   padding-right: 5px;
 }
 
-#tmjnekeeqv .gt_first_grand_summary_row {
+#fwaofnxljw .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -774,11 +774,11 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#tmjnekeeqv .gt_striped {
+#fwaofnxljw .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#tmjnekeeqv .gt_table_body {
+#fwaofnxljw .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -787,7 +787,7 @@ df %>%
   border-bottom-color: #D3D3D3;
 }
 
-#tmjnekeeqv .gt_footnotes {
+#fwaofnxljw .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -801,13 +801,13 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#tmjnekeeqv .gt_footnote {
+#fwaofnxljw .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#tmjnekeeqv .gt_sourcenotes {
+#fwaofnxljw .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -821,46 +821,46 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#tmjnekeeqv .gt_sourcenote {
+#fwaofnxljw .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#tmjnekeeqv .gt_left {
+#fwaofnxljw .gt_left {
   text-align: left;
 }
 
-#tmjnekeeqv .gt_center {
+#fwaofnxljw .gt_center {
   text-align: center;
 }
 
-#tmjnekeeqv .gt_right {
+#fwaofnxljw .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#tmjnekeeqv .gt_font_normal {
+#fwaofnxljw .gt_font_normal {
   font-weight: normal;
 }
 
-#tmjnekeeqv .gt_font_bold {
+#fwaofnxljw .gt_font_bold {
   font-weight: bold;
 }
 
-#tmjnekeeqv .gt_font_italic {
+#fwaofnxljw .gt_font_italic {
   font-style: italic;
 }
 
-#tmjnekeeqv .gt_super {
+#fwaofnxljw .gt_super {
   font-size: 65%;
 }
 
-#tmjnekeeqv .gt_footnote_marks {
+#fwaofnxljw .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
-<div id="tmjnekeeqv" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+<div id="fwaofnxljw" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
   <thead class="gt_header">
     <tr>
       <th colspan="7" class="gt_heading gt_title gt_font_normal" style><strong>Taylor Swift has higher US and Total sales than Beyoncé, but Beyoncé's international sales are higher</strong></th>

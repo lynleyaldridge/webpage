@@ -1,0 +1,121 @@
+---
+title: "Tables with summary rows in gt" 
+author: Lynley Aldridge
+date: '2021-02-15'
+slug: tables-with-summary-rows-in-gt
+categories: []
+tags:
+  - gt
+  - Rstats
+  - TidyTuesday
+  - Tutorial
+subtitle: ''
+summary: ''
+draft: yes
+authors: []
+lastmod: '2021-02-15T20:39:45+11:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+```{r setup, message = FALSE}
+
+#load packages
+library(tidyverse)
+library(gt) # for summary tables
+
+#load data
+albums <- read.csv('https://raw.githubusercontent.com/lynleyaldridge/tidytuesday/main/2020/2020-week40/data/albums.csv')
+
+```
+
+# Adding summary rows with more complex calculations
+
+One thing I've learned in my journey with R so far is that 'finishing that off' with 'just one more thing' can involve a considerable amount of work when you're teaching yourself as you go. I was keen, however, to create a table summarizing total US and worldwide sales for each artist, and calculating what percentage of each artist's total sales was represented by US sales. Thanks to [josep maria porrà](https://stackoverflow.com/questions/63041655/how-can-you-add-group-percentages-to-tables-using-the-gt-package) for providing an example on stack overflow I was able to modify to create the below code. First, we need to create a new dataframe calculating US sales as a percentage of total sales for each artist:
+
+```{r}
+
+albums_grouped <- albums %>%
+  drop_na() %>%
+  group_by(artist) %>%
+  summarise_at(vars(US_sales, WW_sales), sum) %>%
+  rowwise() %>%
+  mutate(pct_US = US_sales/WW_sales)
+
+albums_grouped
+```
+
+These will be the values that we pull into the summary rows. Now, let's make a table based on selected columns from the original `albums` dataframe, dropping albums with missing sales data, grouping by artist, and using album title as the row name. We follow the steps above to assign column labels and column spanner headings, set column alignment, and give the table a title and subtitle. Next we create summary rows. 
+
+In order to create the summary rows, first summarize the `US_sales` and `WW_sales` columns, using the `sum` function and reporting output as `TOTAL`. Then select the `pct_US` for the `Taylor Swift` row in `albums_grouped`, and retrieve as `TOTAL` for the Taylor Swift group. Repeat for Beyoncé. The `formatter =` argument allows formatting numbers as percentages, to specified number of decimal points: 
+
+```{r}
+
+albums %>%
+  
+  select(title, artist, year, US_chart, UK_chart, US_sales, WW_sales, US_percent) %>%
+  
+  drop_na() %>%
+  
+  gt(rowname_col = "title", groupname_col = "artist") %>%
+  
+    cols_label(
+      year = "Released",
+      US_chart = "US",
+      UK_chart = "UK",
+      US_sales = "US",
+      WW_sales = "WW",
+      US_percent = "US sales (%)") %>%
+
+    tab_spanner(label = "Chart position", columns = vars(US_chart, 
+                                                         UK_chart)) %>%
+    tab_spanner(label = "Sales ($ million)", columns = vars(US_sales,
+                                                            WW_sales)) %>%
+
+    cols_align(align = "right", columns = c("US_chart", "UK_chart",
+                                            "US_sales", "WW_sales",
+                                            "US_percent")) %>%
+  
+    tab_header(
+      title = md(
+        "**Taylor Swift has higher sales than Beyoncé, but owes a greater proportion of her success to US sales than Beyoncé**"),
+      subtitle = md(
+        "*Peak chart position, sales, and US sales as a percentage of total sales by album*")) %>%
+
+    tab_source_note(
+      source_note = md(
+          "Source: Billboard via Wikipedia, October 2020<br>Excludes 3 albums for which worldwide sales data was not available - Taylor Swift, Folklore, and 4")) %>%
+  
+    # create summary rows for each group 
+    summary_rows(groups = TRUE, 
+                 columns = vars(US_sales, WW_sales),
+                 fns = list(TOTAL = "sum"),
+                 formatter = fmt_number, decimals = 1) %>%
+    summary_rows(groups = "Taylor Swift",
+                 columns = vars(US_percent), 
+                 fns = list(TOTAL = ~ 
+                            albums_grouped %>%
+                            filter(artist == "Taylor Swift") %>%
+                            select(pct_US) %>%
+                            pull()),
+                 formatter = fmt_percent, decimals = 1) %>%
+    summary_rows(groups = "Beyoncé",
+                 columns = vars(US_percent), 
+                 fns = list(TOTAL = ~ 
+                            albums_grouped %>%
+                            filter(artist == "Beyoncé") %>%
+                            select(pct_US) %>%
+                            pull()),
+                 formatter = fmt_percent, decimals = 1) %>%
+
+    # style summary rows and row group titles 
+    tab_style(style = cell_text(weight = "bold"),
+        locations = list(cells_summary(groups = TRUE),
+                          cells_row_groups(groups = TRUE)))
+
+
+```

@@ -1,5 +1,5 @@
 ---
-title: 'Figures in R Markdown: Visualizing Data using ggplot2 and Ggflags'
+title: "Figures in R Markdown: Visualizing Data using ggplot2 and ggflags"
 author: Lynley Aldridge
 date: '2021-02-14'
 slug: figures-in-r-markdown-visualizing-data-using-ggplot2-and-ggflags

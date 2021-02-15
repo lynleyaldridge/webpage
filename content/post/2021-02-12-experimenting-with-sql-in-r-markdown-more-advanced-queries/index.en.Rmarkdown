@@ -316,7 +316,7 @@ head(df)
 
 There are a plethora of packages capable of creating high quality tables using R Markdown and blogdown. Some resources for exploring these options can be found on my [resources](/../../../../resources) page. As the purpose of this particular blog post is primarily to explore the use of SQL, I've made a relatively simple table here. In creating this table (using gt as shown below) I drew on:
 
-* [the package documentation for gt](https://blog.rstudio.com/2020/04/08/great-looking-tables-gt-0-2/) 
+* [a blogpost introducing the gt package and its capabilities](https://blog.rstudio.com/2020/04/08/great-looking-tables-gt-0-2/) 
 
 * specific instructions for [creating summary lines](https://gt.rstudio.com/articles/creating-summary-lines.html) in gt
 
