@@ -22,7 +22,6 @@ In this post, I walk through the various steps involved in creating the summary 
 
 # Setup
 
-
 First, let's load packages and read in the data (as manipulated in a [previous post](/2021/02/12/experimenting-with-sql-in-r-markdown-more-join-queries/)):
 
 ```{r setup, message = FALSE}
@@ -266,6 +265,6 @@ Note that there is also a `table_footnote()` function but I couldn't get this fo
 
 It appears that blogdown and gt don't always play nicely together, and some of the functionality of gt won't be available unless I dig deeper into their interplay. It's possible to generate images in R and then save as a .png file, however, which is how I created the preview image used for this blogpost. 
 
-I'm sure these tables could be further beautified with additional experimentation. I'd love to print percentage labels directly onto the inline bar chart, instead of having them as separate columns, for example.
+I'm sure these tables could be further beautified with additional experimentation. I'd love to print percentage labels directly onto the inline bar chart, instead of having them as separate columns, for example. And I think inline bar charts showing total sales, with percentage shading highlighting the proportion of this represented by international sales, would be a more accurate visualization of this data.
 
 Overall, I'm excited by what I've learned about the capabilities of gt, and I'm pleased with the additional knowledge of GitHub I've developed setting up my Tidy Tuesday repository and storing files online to draw on in these code examples. I've also been experimenting with ways of customizing summary rows at the bottom of tables in gt. But this post is long enough already, so let's leave that as a topic for a future post. 
