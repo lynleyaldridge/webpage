@@ -110,7 +110,7 @@ gt1
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#qctrdvqgkz .gt_table {
+#zokvrwlizl .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -135,7 +135,7 @@ gt1
   border-left-color: #D3D3D3;
 }
 
-#qctrdvqgkz .gt_heading {
+#zokvrwlizl .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -147,7 +147,7 @@ gt1
   border-right-color: #D3D3D3;
 }
 
-#qctrdvqgkz .gt_title {
+#zokvrwlizl .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -157,7 +157,7 @@ gt1
   border-bottom-width: 0;
 }
 
-#qctrdvqgkz .gt_subtitle {
+#zokvrwlizl .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -167,13 +167,13 @@ gt1
   border-top-width: 0;
 }
 
-#qctrdvqgkz .gt_bottom_border {
+#zokvrwlizl .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#qctrdvqgkz .gt_col_headings {
+#zokvrwlizl .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -188,7 +188,7 @@ gt1
   border-right-color: #D3D3D3;
 }
 
-#qctrdvqgkz .gt_col_heading {
+#zokvrwlizl .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -208,7 +208,7 @@ gt1
   overflow-x: hidden;
 }
 
-#qctrdvqgkz .gt_column_spanner_outer {
+#zokvrwlizl .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -220,15 +220,15 @@ gt1
   padding-right: 4px;
 }
 
-#qctrdvqgkz .gt_column_spanner_outer:first-child {
+#zokvrwlizl .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#qctrdvqgkz .gt_column_spanner_outer:last-child {
+#zokvrwlizl .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#qctrdvqgkz .gt_column_spanner {
+#zokvrwlizl .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -240,7 +240,7 @@ gt1
   width: 100%;
 }
 
-#qctrdvqgkz .gt_group_heading {
+#zokvrwlizl .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -262,7 +262,7 @@ gt1
   vertical-align: middle;
 }
 
-#qctrdvqgkz .gt_empty_group_heading {
+#zokvrwlizl .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -277,15 +277,15 @@ gt1
   vertical-align: middle;
 }
 
-#qctrdvqgkz .gt_from_md > :first-child {
+#zokvrwlizl .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#qctrdvqgkz .gt_from_md > :last-child {
+#zokvrwlizl .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#qctrdvqgkz .gt_row {
+#zokvrwlizl .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -304,7 +304,7 @@ gt1
   overflow-x: hidden;
 }
 
-#qctrdvqgkz .gt_stub {
+#zokvrwlizl .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -316,7 +316,7 @@ gt1
   padding-left: 12px;
 }
 
-#qctrdvqgkz .gt_summary_row {
+#zokvrwlizl .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -326,7 +326,7 @@ gt1
   padding-right: 5px;
 }
 
-#qctrdvqgkz .gt_first_summary_row {
+#zokvrwlizl .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -336,7 +336,7 @@ gt1
   border-top-color: #D3D3D3;
 }
 
-#qctrdvqgkz .gt_grand_summary_row {
+#zokvrwlizl .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -346,7 +346,7 @@ gt1
   padding-right: 5px;
 }
 
-#qctrdvqgkz .gt_first_grand_summary_row {
+#zokvrwlizl .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -356,11 +356,11 @@ gt1
   border-top-color: #D3D3D3;
 }
 
-#qctrdvqgkz .gt_striped {
+#zokvrwlizl .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#qctrdvqgkz .gt_table_body {
+#zokvrwlizl .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -369,7 +369,7 @@ gt1
   border-bottom-color: #D3D3D3;
 }
 
-#qctrdvqgkz .gt_footnotes {
+#zokvrwlizl .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -383,13 +383,13 @@ gt1
   border-right-color: #D3D3D3;
 }
 
-#qctrdvqgkz .gt_footnote {
+#zokvrwlizl .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#qctrdvqgkz .gt_sourcenotes {
+#zokvrwlizl .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -403,46 +403,46 @@ gt1
   border-right-color: #D3D3D3;
 }
 
-#qctrdvqgkz .gt_sourcenote {
+#zokvrwlizl .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#qctrdvqgkz .gt_left {
+#zokvrwlizl .gt_left {
   text-align: left;
 }
 
-#qctrdvqgkz .gt_center {
+#zokvrwlizl .gt_center {
   text-align: center;
 }
 
-#qctrdvqgkz .gt_right {
+#zokvrwlizl .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#qctrdvqgkz .gt_font_normal {
+#zokvrwlizl .gt_font_normal {
   font-weight: normal;
 }
 
-#qctrdvqgkz .gt_font_bold {
+#zokvrwlizl .gt_font_bold {
   font-weight: bold;
 }
 
-#qctrdvqgkz .gt_font_italic {
+#zokvrwlizl .gt_font_italic {
   font-style: italic;
 }
 
-#qctrdvqgkz .gt_super {
+#zokvrwlizl .gt_super {
   font-size: 65%;
 }
 
-#qctrdvqgkz .gt_footnote_marks {
+#zokvrwlizl .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
-<div id="qctrdvqgkz" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+<div id="zokvrwlizl" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
   
   <thead class="gt_col_headings">
     <tr>
@@ -600,7 +600,7 @@ gt2 <- gt1 %>%
 
     tab_spanner(label = "Chart position", columns = vars(US_chart, 
                                                          UK_chart)) %>%
-    tab_spanner(label = "Sales ($ million)", columns = vars(US_sales,
+    tab_spanner(label = "Sales (millions)", columns = vars(US_sales,
                                                             WW_sales)) %>%
 
     cols_align(align = "right", columns = c("US_chart", "UK_chart",
@@ -617,13 +617,13 @@ gt2 <- gt1 %>%
       color = "#795548",
       weight = "bold"),
       locations = cells_column_spanners(spanners = vars("Chart position", 
-                                                      "Sales ($ million)")))%>%
+                                                      "Sales (millions)")))%>%
   
     tab_header(
       title = md(
-        "**Taylor Swift has higher sales than Beyoncé, but owes a greater proportion of her success to US sales than Beyoncé**"),
+        "**Taylor Swift has sold more albums than Beyoncé, but owes a greater proportion of her success to US sales than Beyoncé**"),
       subtitle = md(
-        "*Peak chart position, sales, and US sales as a percentage of total sales by album*")) %>%
+        "*Peak chart position, copies sold, and US sales as a percentage of total sales by album*")) %>%
 
     tab_source_note(
       source_note = md("<span style = 'color:#795548'>Source: Billboard via Wikipedia, October 2020<br>Excludes 3 albums for which worldwide sales data was not available - Taylor Swift, Folklore, and 4</span>")) %>%
@@ -641,7 +641,7 @@ gt2
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#puzmgrezym .gt_table {
+#ignikggiga .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -666,7 +666,7 @@ gt2
   border-left-color: #D3D3D3;
 }
 
-#puzmgrezym .gt_heading {
+#ignikggiga .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -678,7 +678,7 @@ gt2
   border-right-color: #D3D3D3;
 }
 
-#puzmgrezym .gt_title {
+#ignikggiga .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -688,7 +688,7 @@ gt2
   border-bottom-width: 0;
 }
 
-#puzmgrezym .gt_subtitle {
+#ignikggiga .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -698,13 +698,13 @@ gt2
   border-top-width: 0;
 }
 
-#puzmgrezym .gt_bottom_border {
+#ignikggiga .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#puzmgrezym .gt_col_headings {
+#ignikggiga .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -719,7 +719,7 @@ gt2
   border-right-color: #D3D3D3;
 }
 
-#puzmgrezym .gt_col_heading {
+#ignikggiga .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -739,7 +739,7 @@ gt2
   overflow-x: hidden;
 }
 
-#puzmgrezym .gt_column_spanner_outer {
+#ignikggiga .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -751,15 +751,15 @@ gt2
   padding-right: 4px;
 }
 
-#puzmgrezym .gt_column_spanner_outer:first-child {
+#ignikggiga .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#puzmgrezym .gt_column_spanner_outer:last-child {
+#ignikggiga .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#puzmgrezym .gt_column_spanner {
+#ignikggiga .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -771,7 +771,7 @@ gt2
   width: 100%;
 }
 
-#puzmgrezym .gt_group_heading {
+#ignikggiga .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -793,7 +793,7 @@ gt2
   vertical-align: middle;
 }
 
-#puzmgrezym .gt_empty_group_heading {
+#ignikggiga .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -808,15 +808,15 @@ gt2
   vertical-align: middle;
 }
 
-#puzmgrezym .gt_from_md > :first-child {
+#ignikggiga .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#puzmgrezym .gt_from_md > :last-child {
+#ignikggiga .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#puzmgrezym .gt_row {
+#ignikggiga .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -835,7 +835,7 @@ gt2
   overflow-x: hidden;
 }
 
-#puzmgrezym .gt_stub {
+#ignikggiga .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -847,7 +847,7 @@ gt2
   padding-left: 12px;
 }
 
-#puzmgrezym .gt_summary_row {
+#ignikggiga .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -857,7 +857,7 @@ gt2
   padding-right: 5px;
 }
 
-#puzmgrezym .gt_first_summary_row {
+#ignikggiga .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -867,7 +867,7 @@ gt2
   border-top-color: #D3D3D3;
 }
 
-#puzmgrezym .gt_grand_summary_row {
+#ignikggiga .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -877,7 +877,7 @@ gt2
   padding-right: 5px;
 }
 
-#puzmgrezym .gt_first_grand_summary_row {
+#ignikggiga .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -887,11 +887,11 @@ gt2
   border-top-color: #D3D3D3;
 }
 
-#puzmgrezym .gt_striped {
+#ignikggiga .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#puzmgrezym .gt_table_body {
+#ignikggiga .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -900,7 +900,7 @@ gt2
   border-bottom-color: #D3D3D3;
 }
 
-#puzmgrezym .gt_footnotes {
+#ignikggiga .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -914,13 +914,13 @@ gt2
   border-right-color: #D3D3D3;
 }
 
-#puzmgrezym .gt_footnote {
+#ignikggiga .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#puzmgrezym .gt_sourcenotes {
+#ignikggiga .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -934,52 +934,52 @@ gt2
   border-right-color: #D3D3D3;
 }
 
-#puzmgrezym .gt_sourcenote {
+#ignikggiga .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#puzmgrezym .gt_left {
+#ignikggiga .gt_left {
   text-align: left;
 }
 
-#puzmgrezym .gt_center {
+#ignikggiga .gt_center {
   text-align: center;
 }
 
-#puzmgrezym .gt_right {
+#ignikggiga .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#puzmgrezym .gt_font_normal {
+#ignikggiga .gt_font_normal {
   font-weight: normal;
 }
 
-#puzmgrezym .gt_font_bold {
+#ignikggiga .gt_font_bold {
   font-weight: bold;
 }
 
-#puzmgrezym .gt_font_italic {
+#ignikggiga .gt_font_italic {
   font-style: italic;
 }
 
-#puzmgrezym .gt_super {
+#ignikggiga .gt_super {
   font-size: 65%;
 }
 
-#puzmgrezym .gt_footnote_marks {
+#ignikggiga .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
-<div id="puzmgrezym" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+<div id="ignikggiga" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
   <thead class="gt_header">
     <tr>
-      <th colspan="7" class="gt_heading gt_title gt_font_normal" style="color: #795548; font-size: large;"><strong>Taylor Swift has higher sales than Beyoncé, but owes a greater proportion of her success to US sales than Beyoncé</strong></th>
+      <th colspan="7" class="gt_heading gt_title gt_font_normal" style="color: #795548; font-size: large;"><strong>Taylor Swift has sold more albums than Beyoncé, but owes a greater proportion of her success to US sales than Beyoncé</strong></th>
     </tr>
     <tr>
-      <th colspan="7" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style="color: #795548; font-size: medium;"><em>Peak chart position, sales, and US sales as a percentage of total sales by album</em></th>
+      <th colspan="7" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style="color: #795548; font-size: medium;"><em>Peak chart position, copies sold, and US sales as a percentage of total sales by album</em></th>
     </tr>
   </thead>
   <thead class="gt_col_headings">
@@ -990,7 +990,7 @@ gt2
         <span class="gt_column_spanner">Chart position</span>
       </th>
       <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="2" style="color: #795548; font-weight: bold;">
-        <span class="gt_column_spanner">Sales ($ million)</span>
+        <span class="gt_column_spanner">Sales (millions)</span>
       </th>
       <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1" style="color: #795548;">US sales (%)</th>
     </tr>

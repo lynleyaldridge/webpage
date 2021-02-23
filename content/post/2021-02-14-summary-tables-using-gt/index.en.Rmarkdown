@@ -164,7 +164,7 @@ gt2 <- gt1 %>%
   
     # create headings spanning multiple columns
     tab_spanner(label = "Chart position", columns = vars(US_chart, UK_chart)) %>%
-    tab_spanner(label = "Sales ($ million)", columns = vars(WW_sales, US_sales, other_sales)) %>%
+    tab_spanner(label = "Sales (millions)", columns = vars(WW_sales, US_sales, other_sales)) %>%
     tab_spanner(label = "International sales", columns = vars(other_percent, percent_plot)) 
   
 # view table
@@ -194,7 +194,7 @@ gt3 <- gt2 %>%
           weight = "bold"
         ),
         locations = cells_column_spanners(spanners = vars("Chart position", 
-                                    "Sales ($ million)", 
+                                    "Sales (millions)", 
                                     "International sales")
         ) 
     )%>%
@@ -232,7 +232,7 @@ gt4 <- gt3 %>%
     # create title for table, formatting as markdown
     tab_header(
       title = md("**Taylor Swift's Speak Now sold primarily to US audiences, but international sales comprised an increasing proportion of her sales for each subsequent album**"),
-      subtitle = md("*Peak chart position and sales by album and location*")) %>%
+      subtitle = md("*Peak chart position and number of copies sold by album and location*")) %>%
   
     # create source note for table, formatting as md and applying color
     tab_source_note(source_note = md("<span style = 'color:#795548'>Source: Billboard via Wikipedia, October 2020; excludes albums for which worldwide sales were unavailable<br>Table: Modified from Georgios Karamanis</span>")) %>%
@@ -265,6 +265,6 @@ Note that there is also a `table_footnote()` function but I couldn't get this fo
 
 It appears that blogdown and gt don't always play nicely together, and some of the functionality of gt won't be available unless I dig deeper into their interplay. It's possible to generate images in R and then save as a .png file, however, which is how I created the preview image used for this blogpost. 
 
-I'm sure these tables could be further beautified with additional experimentation. I'd love to print percentage labels directly onto the inline bar chart, instead of having them as separate columns, for example. And I think inline bar charts showing total sales, with percentage shading highlighting the proportion of this represented by international sales, would be a more accurate visualization of this data.
+I'm sure these tables could be further beautified with additional experimentation. I'd love to print percentage labels directly onto the inline bar chart, instead of having them as separate columns, for example. And I think inline bar charts showing the total number of copies sold, with shading highlighting the proportion of this represented by international sales, would be a more accurate visualization of this data.
 
 Overall, I'm excited by what I've learned about the capabilities of gt, and I'm pleased with the additional knowledge of GitHub I've developed setting up my Tidy Tuesday repository and storing files online to draw on in these code examples. I've also been experimenting with ways of customizing summary rows at the bottom of tables in gt. But this post is long enough already, so let's leave that as a topic for a future post. 

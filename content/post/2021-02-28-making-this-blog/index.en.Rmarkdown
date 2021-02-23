@@ -1,24 +1,19 @@
 ---
-title: "Making this blog: A step-by-step guide"
+title: 'Making this blog: A step-by-step guide'
 author: Lynley Aldridge
-date: '2021-01-08'
-draft: TRUE
-slug: making-this-blog
-categories: []
-tags: 
-  - Tutorial
+date: '2021-02-28'
+tags:
   - Rstats
+  - Tutorial
   - website
-subtitle: ''
-summary: ''
-authors: []
+draft: yes
+slug: making-this-blog
 lastmod: '2021-01-08T14:52:46+11:00'
 featured: no
 image:
   caption: ''
   focal_point: ''
   preview_only: no
-projects: []
 ---
 
 In this post I talk through, step-by-step, the process I used to create this website using R Studio, GitHub, blogdown, Hugo and Netlify. There are already plenty of great resources online that will talk you through this process, but this is written by a relative novice to both R and GitHub, in the hopes that my experiences will be of use to others in similar situations. 

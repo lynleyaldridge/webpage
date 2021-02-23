@@ -310,9 +310,9 @@ INSERT INTO charts (FK_Charts_Albums, chart, chart_position)
 ## [1] 140
 ```
 
-## Pivoting sales data using SELECT and JOIN ON queries
+# Pivoting charts and sales data using SELECT and JOIN ON queries
 
-To pivot data so that sales data for each country is presented in a new column (using RSQLite), we can use a series of JOIN ... ON statements.
+To pivot data so that charts and sales data for each country is presented in a new column (using RSQLite), we can use a series of JOIN ... ON statements.
 
 The following code excerpt (see full context below) creates a temporary table called `US_charts` which selects rows from the `charts` table where `chart = "US"` (for matching album IDs):
 
@@ -327,7 +327,7 @@ This temporary table can then be referenced in the SELECT statement at the begin
 
 Note that specific code for pivoting data varies depending on SQL vendor, and Microsoft SQL server uses [PIVOT and UNPIVOT](https://docs.microsoft.com/en-us/sql/t-sql/queries/from-using-pivot-and-unpivot?view=sql-server-ver15) operators. 
 
-We can also add calculated fields to this query to show what percentage of each album's  worldwide sales was comprised by sales in a specified country (e.g., `SELECT US_sales.sales/WW_sales.sales*100 AS US_percent` creates a `US_percent` column, by dividing US sales by worldwide sales, then multiplying by 100). The `round()` wrapper rounds the result of the formula defining `US_percent` to the number of decimal points specified after the comma. Note that column names included in calculations must be specified in full (e.g., `US_sales.sales`), and not by aliases that will not be assigned until the SELECT statement runs (e.g., `US_sales`).
+We can also add calculated fields to this query to show what percentage of albums sold worldwide were sold in a specified country (e.g., `SELECT US_sales.sales/WW_sales.sales*100 AS US_percent` creates a `US_percent` column, by dividing US sales by worldwide sales, then multiplying by 100). The `round()` wrapper rounds the result of the formula defining `US_percent` to the number of decimal points specified after the comma. Note that column names included in calculations must be specified in full (e.g., `US_sales.sales`), and not by aliases that will not be assigned until the SELECT statement runs (e.g., `US_sales`).
 
 What follows should be seen as a proof of concept, which I've used to extract just US charts and sales data:
 
@@ -371,7 +371,7 @@ LEFT JOIN sales AS WW_sales
 ## 14      Beyoncé             Lemonade 2016        1  1554000  2500000       62.2
 ```
 
-## One more SQL trick: UPDATE query using CASE WHEN statements
+# One more SQL trick: UPDATE query using CASE WHEN statements
 
 While writing the query above, I realized that the country codes in the sales table aren't consistent, with worldwide sales sometimes being abbreviated as "WW" and sometimes as "World". The country codes in this table also aren't consistent with those used in `ggflags`, which may become an issue when we use `ggplot2` and `ggflags` to graph data by country. 
 
@@ -399,7 +399,7 @@ SET country = CASE WHEN country = 'World' THEN 'WW'
 ## [1] 48
 ```
 
-## Using SQL directly in R Markdown code chunks, and outputting for manipulation in R
+# Using SQL directly in R Markdown code chunks, and outputting for manipulation in R
 
 What if I now want to output this data to R to create a prettily formatted table or figure (e.g., in an R Markdown report or in a blogdown post like this one)?  In the following code chunk, I draw on [Andrew Couch's tutorial](https://www.youtube.com/watch?v=zAgTlZUugUE) again, to write SQL code directly into the R Markdown code chunk (by replacing the `{R}` prefix with the following `{sql, connection = con, output.var = "df"}`). The first part of this statement tells R Markdown that the chunk uses SQL code and specifies the connection to access the database. The second part of the statement (`output.var = "df"`) is used to save output as a dataframe named df.
 
@@ -504,14 +504,14 @@ df %>%
     # create headings spanning multiple columns
     tab_spanner(label = "Chart position", columns = vars(US_chart, 
                                                          UK_chart)) %>%
-    tab_spanner(label = "Sales ($ million)", columns = vars(US_sales,
+    tab_spanner(label = "Sales (millions)", columns = vars(US_sales,
                                                             other_sales,
                                                             WW_sales)) %>%
 
     # create title and subtitle for table, use md formatting
     tab_header(
-      title = md("**Taylor Swift has higher US and Total sales than Beyoncé, but Beyoncé's international sales are higher**"),
-      subtitle = md("*Peak chart position and sales by location*"))%>%
+      title = md("**Taylor Swift has sold more albums in the US and overall, Beyoncé has sold more internationally**"),
+      subtitle = md("*Peak chart position and number of copies sold by album and location*"))%>%
   
     # create summary rows for each group 
     summary_rows(groups = TRUE, 
@@ -521,14 +521,14 @@ df %>%
   
     
     # create source note for table
-    tab_source_note("Source: Billboard") 
+    tab_source_note("Source: Billboard via Wikipedia, October 2020") 
 ```
 
 <!--html_preserve--><style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#fwaofnxljw .gt_table {
+#ktskaeevho .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -553,7 +553,7 @@ df %>%
   border-left-color: #D3D3D3;
 }
 
-#fwaofnxljw .gt_heading {
+#ktskaeevho .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -565,7 +565,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#fwaofnxljw .gt_title {
+#ktskaeevho .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -575,7 +575,7 @@ df %>%
   border-bottom-width: 0;
 }
 
-#fwaofnxljw .gt_subtitle {
+#ktskaeevho .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -585,13 +585,13 @@ df %>%
   border-top-width: 0;
 }
 
-#fwaofnxljw .gt_bottom_border {
+#ktskaeevho .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#fwaofnxljw .gt_col_headings {
+#ktskaeevho .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -606,7 +606,7 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#fwaofnxljw .gt_col_heading {
+#ktskaeevho .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -626,7 +626,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#fwaofnxljw .gt_column_spanner_outer {
+#ktskaeevho .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -638,15 +638,15 @@ df %>%
   padding-right: 4px;
 }
 
-#fwaofnxljw .gt_column_spanner_outer:first-child {
+#ktskaeevho .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#fwaofnxljw .gt_column_spanner_outer:last-child {
+#ktskaeevho .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#fwaofnxljw .gt_column_spanner {
+#ktskaeevho .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -658,7 +658,7 @@ df %>%
   width: 100%;
 }
 
-#fwaofnxljw .gt_group_heading {
+#ktskaeevho .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -680,7 +680,7 @@ df %>%
   vertical-align: middle;
 }
 
-#fwaofnxljw .gt_empty_group_heading {
+#ktskaeevho .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -695,15 +695,15 @@ df %>%
   vertical-align: middle;
 }
 
-#fwaofnxljw .gt_from_md > :first-child {
+#ktskaeevho .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#fwaofnxljw .gt_from_md > :last-child {
+#ktskaeevho .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#fwaofnxljw .gt_row {
+#ktskaeevho .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -722,7 +722,7 @@ df %>%
   overflow-x: hidden;
 }
 
-#fwaofnxljw .gt_stub {
+#ktskaeevho .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -734,7 +734,7 @@ df %>%
   padding-left: 12px;
 }
 
-#fwaofnxljw .gt_summary_row {
+#ktskaeevho .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -744,7 +744,7 @@ df %>%
   padding-right: 5px;
 }
 
-#fwaofnxljw .gt_first_summary_row {
+#ktskaeevho .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -754,7 +754,7 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#fwaofnxljw .gt_grand_summary_row {
+#ktskaeevho .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -764,7 +764,7 @@ df %>%
   padding-right: 5px;
 }
 
-#fwaofnxljw .gt_first_grand_summary_row {
+#ktskaeevho .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -774,11 +774,11 @@ df %>%
   border-top-color: #D3D3D3;
 }
 
-#fwaofnxljw .gt_striped {
+#ktskaeevho .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#fwaofnxljw .gt_table_body {
+#ktskaeevho .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -787,7 +787,7 @@ df %>%
   border-bottom-color: #D3D3D3;
 }
 
-#fwaofnxljw .gt_footnotes {
+#ktskaeevho .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -801,13 +801,13 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#fwaofnxljw .gt_footnote {
+#ktskaeevho .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#fwaofnxljw .gt_sourcenotes {
+#ktskaeevho .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -821,52 +821,52 @@ df %>%
   border-right-color: #D3D3D3;
 }
 
-#fwaofnxljw .gt_sourcenote {
+#ktskaeevho .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#fwaofnxljw .gt_left {
+#ktskaeevho .gt_left {
   text-align: left;
 }
 
-#fwaofnxljw .gt_center {
+#ktskaeevho .gt_center {
   text-align: center;
 }
 
-#fwaofnxljw .gt_right {
+#ktskaeevho .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#fwaofnxljw .gt_font_normal {
+#ktskaeevho .gt_font_normal {
   font-weight: normal;
 }
 
-#fwaofnxljw .gt_font_bold {
+#ktskaeevho .gt_font_bold {
   font-weight: bold;
 }
 
-#fwaofnxljw .gt_font_italic {
+#ktskaeevho .gt_font_italic {
   font-style: italic;
 }
 
-#fwaofnxljw .gt_super {
+#ktskaeevho .gt_super {
   font-size: 65%;
 }
 
-#fwaofnxljw .gt_footnote_marks {
+#ktskaeevho .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
-<div id="fwaofnxljw" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+<div id="ktskaeevho" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
   <thead class="gt_header">
     <tr>
-      <th colspan="7" class="gt_heading gt_title gt_font_normal" style><strong>Taylor Swift has higher US and Total sales than Beyoncé, but Beyoncé's international sales are higher</strong></th>
+      <th colspan="7" class="gt_heading gt_title gt_font_normal" style><strong>Taylor Swift has sold more albums in the US and overall, Beyoncé has sold more internationally</strong></th>
     </tr>
     <tr>
-      <th colspan="7" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style><em>Peak chart position and sales by location</em></th>
+      <th colspan="7" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style><em>Peak chart position and number of copies sold by album and location</em></th>
     </tr>
   </thead>
   <thead class="gt_col_headings">
@@ -877,7 +877,7 @@ df %>%
         <span class="gt_column_spanner">Chart position</span>
       </th>
       <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3">
-        <span class="gt_column_spanner">Sales ($ million)</span>
+        <span class="gt_column_spanner">Sales (millions)</span>
       </th>
     </tr>
     <tr>
@@ -1042,17 +1042,17 @@ df %>%
   </tbody>
   <tfoot class="gt_sourcenotes">
     <tr>
-      <td class="gt_sourcenote" colspan="7">Source: Billboard</td>
+      <td class="gt_sourcenote" colspan="7">Source: Billboard via Wikipedia, October 2020</td>
     </tr>
   </tfoot>
   
 </table></div><!--/html_preserve-->
 
-## Next steps
+# Next steps and a note on editing
 
 As outlined above, the next steps for this particular project for me are to further refine my output table using `gt` (I'm wanting to include a barplot visualizing US sales as a percentage of total sales), and using `ggplot2` and `ggflags` to create bar plots showing sales data by country, assigning a flag to each bar.  Once again, however, these are questions for a future post. 
 
-## Finally, remember to disconnect
+# Finally, remember to disconnect
 
 At the end of this process, best practice is always to disconnect from the database.
 
