@@ -29,12 +29,14 @@ Here are some books I have found useful in continuing my journey:
 * [Data science in education using R](https://datascienceineducation.com/) by Ryan Estrellado, Emily Bovee, Jesse Mostipak, Joshua Rosenberg and Isabella Vel&#225;squez
 
 ## Data visualization
-Additional books I've found useful specifically on the topic of data visualization:
+Resources I've found useful specifically on the topic of data visualization:
 
+* Chapters 3 and 7 of [R for data science](https://r4ds.had.co.nz/) by Hadley Wickham & Garrett Grolemund
 * [Data visualization: A practical introduction](https://socviz.co/) by Kieran Healy
 * [Fundamentals of Data Visualization](https://clauswilke.com/dataviz/) by Claus Wilke
 * [R Graphics Cookbook](https://r-graphics.org/) by Winston Chang, a practical recipe guide for visualizing data using R, and primarily ggplot2
 * [ggplot2: elegant graphics for data analysis](https://ggplot2-book.org/index.html) by Hadley Wickham, Danielle Navarro and Thomas Lin Pedersen, which focuses more on explaining the Grammar of Graphis used by ggplot2, and helping the reader to get better at customizing plots by understanding more about the theory behind how ggplot2 works 
+* R Studio Cloud's primers on how to [Visualize data](https://rstudio.cloud/learn/primers/3)
 
 ## Creating summary tables in R
 Here are some useful blogposts and other resources I've found for creating tables in R for summarizing data. Packages I've been getting to know so far include [arsenal](https://www.rdocumentation.org/packages/arsenal/versions/3.5.0) and [gt](https://gt.rstudio.com/).
