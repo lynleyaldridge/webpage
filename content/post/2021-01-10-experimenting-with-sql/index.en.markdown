@@ -2,6 +2,7 @@
 title: "Experimenting with SQL in RMarkdown: SELECT, UPDATE and JOIN queries using RSQLite"
 author: Lynley Aldridge
 date: '2021-01-13'
+draft: yes
 slug: experimenting-with-sql
 categories: []
 tags: 

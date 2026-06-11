@@ -5,6 +5,9 @@ authors:
 - admin
 date: "2020-10-05T00:00:00Z"
 doi: ""
+
+draft: yes
+
 featured: false
 projects:
 - educational-data
