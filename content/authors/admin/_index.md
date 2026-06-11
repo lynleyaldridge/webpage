@@ -11,12 +11,6 @@ education:
   - course: BPsych (Hons)
     institution: Charles Sturt University, Australia
     year: 2003
-  - course: Grad Dip Japanese
-    institution: Hiroshima University, Japan
-    year: 1997
-  - course: B Japanese
-    institution: Wollongong University, Australia
-    year: 1996 
 email: ""
 highlight_name: false
 interests:
