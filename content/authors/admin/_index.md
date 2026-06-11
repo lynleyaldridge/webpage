@@ -1,5 +1,5 @@
 ---
-bio: My research interests include social and educational inequality, transitions from education to employment, education, cross-cultural comparative research, migration/mobility, mental health/wellbeing, and Rstats.  
+bio: My research interests include social and educational inequality, transitions from education to employment, education, cross-cultural comparative research, and Rstats.  
 education:
   courses:
   - course: PhD Sociology and Social Policy
@@ -18,8 +18,6 @@ interests:
 - Youth transitions
 - Education
 - Cross-cultural comparative research
-- Migration/mobility
-- Mental health and well-being
 - Rstats
 organizations: #can just leave blank instead of 'set as []'
 - name: 
@@ -47,4 +45,4 @@ user_groups:
 - Principal Investigators
 ---
 
-I am a PhD qualified social scientist, with a background in psychology and sociology. I love data analysis, visualization and interpretation, and have rich experience collecting, managing, analysing and reporting on both quantitative and qualitative data across a diverse range of research and evaluation projects (primarily in the fields of psycho-oncology and education). I am passionate about the use of data to inform policy and practice. I call myself an Antipodean, identifying as equal parts Kiwi (New Zealander) and Aussie (Australian). 
+I am a PhD qualified research and evaluation analyst, with a background in psychology and sociology. I love data analysis, visualization and interpretation, and have rich experience collecting, managing, analyzing and reporting on both quantitative and qualitative data across a diverse range of research and evaluation projects (primarily in the field of education). I am passionate about the use of data to inform policy and practice. 
