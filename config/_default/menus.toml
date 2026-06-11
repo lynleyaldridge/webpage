@@ -8,10 +8,13 @@
   url = "#posts"
   weight = 20
 
-[[main]]
-  name = "Projects"
-  url = "#projects"
-  weight = 30
+# Link to a projects page from the menu.
+# To enable, uncomment the lines below.  (Disabled 2026-06-11)
+
+# [[main]]
+#  name = "Projects"
+#  url = "#projects"
+#  weight = 30
 
 [[main]]
   name = "Publications"
