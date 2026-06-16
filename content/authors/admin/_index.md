@@ -1,5 +1,5 @@
 ---
-bio: My research interests include social and educational inequality, transitions from education to employment, education, cross-cultural comparative research, and Rstats.  
+bio: My research interests include social and educational inequality, transitions from education to employment, cross-cultural comparative research, and Rstats.  
 education:
   courses:
   - course: PhD Sociology and Social Policy
@@ -16,7 +16,6 @@ highlight_name: false
 interests:
 - Social and educational inequality
 - Youth transitions
-- Education
 - Cross-cultural comparative research
 - Rstats
 organizations: #can just leave blank instead of 'set as []'
@@ -27,9 +26,6 @@ social:
 - icon: envelope
   icon_pack: fas
   link: /#contact
-- icon: twitter
-  icon_pack: fab
-  link: https://twitter.com/lynleyaldridge
 - icon: graduation-cap
   icon_pack: fas
   link: https://scholar.google.com/citations?user=CVam3acAAAAJ&hl=en
